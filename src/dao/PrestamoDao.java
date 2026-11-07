@@ -10,7 +10,7 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import utilidades.GestorErrores;
 public class PrestamoDao {
-    public int insertarPrestamo(Prestamo prestamo) throws SQLException{
+    public int registrarPrestamo(Prestamo prestamo) throws SQLException{
         int idGenerado = 0;
         
         String sql = "INSERT INTO prestamos(cliente_id, empleado_id, monto, saldo_capital, interes, cuotas,  fecha_solicitud, fecha_aprobacion, estado )"

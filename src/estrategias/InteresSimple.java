@@ -1,13 +1,12 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
+
 package estrategias;
 
-/**
- *
- * @author Yenifer
- */
-public class InteresSimple {
+public class InteresSimple implements EstrategiaInteres {
+    private static final double TASA_MENSUAL = 0.02;
+    
+    @Override
+    public double calcularInteres(double monto, int cuotas){
+    return monto * TASA_MENSUAL * cuotas;
+    }
     
 }

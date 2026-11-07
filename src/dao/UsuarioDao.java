@@ -29,7 +29,7 @@ public class UsuarioDao {
             
         
         }catch (SQLException e){
-            System.err.println(GestorErrores.mostrarError(e, "Intentar iniciar sesión"));
+            System.err.println(GestorErrores.mostrarError(e));
         }
         return usuarioAutenticado;
     }

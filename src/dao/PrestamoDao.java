@@ -40,7 +40,7 @@ public class PrestamoDao {
             }
         } } 
         catch(SQLException e){
-            System.err.println(GestorErrores.mostrarError(e, "Registrar el nuevo crédito"));
+            System.err.println(GestorErrores.mostrarError(e));
                 }
         
         return idGenerado;

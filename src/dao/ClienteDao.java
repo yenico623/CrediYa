@@ -7,6 +7,7 @@ import modelos.Cliente;
 import utilidades.dbConnection;
 import java.sql.ResultSet;
 import java.time.LocalDate;
+import utilidades.GestorErrores;
 
 public class ClienteDao {
     public Cliente buscarCliente(String documento) throws SQLException{
@@ -37,7 +38,7 @@ public class ClienteDao {
                 }
             }
         }catch (SQLException e){
-            System.err.println("ERROR al buscar cliente "+ e.getMessage());
+            System.err.println(GestorErrores.mostrarError(e));
         }
         
         

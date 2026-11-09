@@ -95,3 +95,12 @@ CREATE TABLE detalles_distribucion_pago (
 
 
 INSERT INTO usuarios (username, password, rol) VALUES ('admin', 'admin123', 'ADMIN');
+
+desc empleados;
+ALTER TABLE clientes ADD COLUMN empleado_id INT;
+
+ALTER TABLE clientes ADD CONSTRAINT fk_cliente_empleado 
+FOREIGN KEY (empleado_id) REFERENCES empleados(id);
+SELECT * FROM empleados;
+SELECT *  FROM personas;
+SELECT * FROM usuarios;

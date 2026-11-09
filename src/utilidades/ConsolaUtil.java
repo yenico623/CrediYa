@@ -36,7 +36,7 @@ public class ConsolaUtil {
                 return Integer.parseInt(entrada);
                 
             }catch(NumberFormatException e){
-                System.out.println("[!] ERROR: Digite un número entero.");
+                System.out.println("[!] ERROR: Digite un numero entero.");
             }
         }}
         

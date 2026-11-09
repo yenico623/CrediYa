@@ -1,16 +1,17 @@
-
 package dao;
 
-import  modelos.Prestamo;
+import modelos.Prestamo;
 import utilidades.dbConnection;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.time.LocalDate;
 import utilidades.GestorErrores;
+
 public class PrestamoDao {
-    public int registrarPrestamo(Prestamo prestamo) throws SQLException{
+    public int registrarPrestamo(Prestamo prestamo) throws SQLException {
         int idGenerado = 0;
         
         String sql = "INSERT INTO prestamos("
@@ -24,36 +25,87 @@ public class PrestamoDao {
                 + " fecha_aprobacion,"
                 + " estado )"
                 + " VALUES (? ,? ,? ,? ,? ,? ,? ,? ,? )";
-       
+        
         try (Connection con = dbConnection.getInstancia().getConexion();
-        PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)){
-        
-        ps.setInt(1, prestamo.getCliente().getId());
-        ps.setInt(2, prestamo.getEmpleado().getId());
-        ps.setDouble(3, prestamo.getMonto());
-        ps.setDouble(4, prestamo.getSaldoCapital());
-        ps.setInt(5, prestamo.getCuotas());
-        ps.setDouble(6,prestamo.getInteres());
-        ps.setDate(7, java.sql.Date.valueOf(prestamo.getFechaSolicitud()));
-        ps.setDate(8, java.sql.Date.valueOf(prestamo.getFechaAprobacion()));
-        ps.setString(8, prestamo.getEstado());
-        
-        int filasAfectadas = ps.executeUpdate();
-        
-        if (filasAfectadas > 0){
-            try(ResultSet rs = ps.getGeneratedKeys()){
-                if(rs.next()){
-                    idGenerado = rs.getInt(1);
-                }
+             PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             
-            }
-        } } 
-        catch(SQLException e){
-            System.err.println(GestorErrores.mostrarError(e));
+            ps.setInt(1, prestamo.getCliente().getId());
+            ps.setInt(2, prestamo.getEmpleado().getId());
+            ps.setDouble(3, prestamo.getMonto());
+            ps.setDouble(4, prestamo.getSaldoCapital());
+            ps.setDouble(5, prestamo.getInteres());
+            ps.setInt(6, prestamo.getCuotas());
+            ps.setDate(7, java.sql.Date.valueOf(prestamo.getFechaSolicitud()));
+            ps.setDate(8, java.sql.Date.valueOf(prestamo.getFechaAprobacion()));
+            ps.setString(9, prestamo.getEstado());
+            
+            int filasAfectadas = ps.executeUpdate();
+            
+            if (filasAfectadas > 0) {
+                try (ResultSet rs = ps.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        idGenerado = rs.getInt(1);
+                    }
                 }
+            }
+        } catch (SQLException e) {
+            System.err.println(GestorErrores.mostrarError(e));
+        }
         
         return idGenerado;
-        
     }
     
+    public int registrarPrestamoConCuotas(Prestamo prestamo) throws SQLException {
+        int idGenerado = 0;
+        String sqlPrestamo = "INSERT INTO prestamos (cliente_id, empleado_id, monto, saldo_capital, interes, cuotas, fecha_solicitud, fecha_aprobacion, estado) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sqlCuota = "INSERT INTO cuotas_plan (prestamo_id, numero_cuota, fecha_vencimiento, capital_esperado, interes_esperado, capital_pendiente, interes_pendiente, estado) VALUES (?, ?, ?, ?, ?, ?, ?, 'PENDIENTE')";
+
+        Connection con = dbConnection.getInstancia().getConexion();
+        try {
+            con.setAutoCommit(false);
+
+            try (PreparedStatement ps = con.prepareStatement(sqlPrestamo, Statement.RETURN_GENERATED_KEYS)) {
+                ps.setInt(1, prestamo.getCliente().getId());
+                ps.setInt(2, prestamo.getEmpleado().getId());
+                ps.setDouble(3, prestamo.getMonto());
+                ps.setDouble(4, prestamo.getSaldoCapital());
+                ps.setDouble(5, prestamo.getInteres());
+                ps.setInt(6, prestamo.getCuotas());
+                ps.setDate(7, java.sql.Date.valueOf(prestamo.getFechaSolicitud()));
+                ps.setDate(8, java.sql.Date.valueOf(prestamo.getFechaAprobacion()));
+                ps.setString(9, prestamo.getEstado());
+                ps.executeUpdate();
+
+                try (ResultSet rs = ps.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        idGenerado = rs.getInt(1);
+                    }
+                }
+            }
+
+            double capitalCuota = prestamo.getMonto() / prestamo.getCuotas();
+            double interesCuota = (prestamo.getMonto() * (prestamo.getInteres() / 100));
+
+            for (int i = 1; i <= prestamo.getCuotas(); i++) {
+                try (PreparedStatement psCuota = con.prepareStatement(sqlCuota)) {
+                    psCuota.setInt(1, idGenerado);
+                    psCuota.setInt(2, i);
+                    psCuota.setDate(3, java.sql.Date.valueOf(LocalDate.now().plusMonths(i)));
+                    psCuota.setDouble(4, capitalCuota);
+                    psCuota.setDouble(5, interesCuota);
+                    psCuota.setDouble(6, capitalCuota);
+                    psCuota.setDouble(7, interesCuota);
+                    psCuota.executeUpdate();
+                }
+            }
+
+            con.commit();
+            con.setAutoCommit(true);
+        } catch (SQLException e) {
+            con.rollback();
+            con.setAutoCommit(true);
+            System.err.println(GestorErrores.mostrarError(e));
+        }
+        return idGenerado;
+    }
 }

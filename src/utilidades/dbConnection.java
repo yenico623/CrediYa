@@ -30,7 +30,14 @@ public class dbConnection {
         return instancia;
     }
 
-    public Connection getConexion() {
+   public Connection getConexion() {
+        try {
+            if (conexion == null || conexion.isClosed()) {
+                conexion = DriverManager.getConnection(URL, USER, PASS);
+            }
+        } catch (SQLException e) {
+            System.err.println("Error al verificar la conexion: " + e.getMessage());
+        }
         return conexion;
     }
 

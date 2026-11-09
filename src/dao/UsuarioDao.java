@@ -7,7 +7,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import utilidades.GestorErrores;
-// Clase responsable del acceso a datos, consultas y persistencia de la tabla de usuarios
 public class UsuarioDao {
     public Usuario autenticarUsuario(String username, String password) throws SQLException{
         Usuario usuarioAutenticado = null;

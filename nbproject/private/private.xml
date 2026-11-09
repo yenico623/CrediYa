@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project-private xmlns="http://www.netbeans.org/ns/project-private/1">
+    <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
+    <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
+        <group>
+            <file>file:/C:/Users/Yenifer/OneDrive/Documents/NetBeansProjects/CrediYa/src/dao/UsuarioDao.java</file>
+            <file>file:/C:/Users/Yenifer/OneDrive/Documents/NetBeansProjects/CrediYa/src/dao/ClienteDao.java</file>
+            <file>file:/C:/Users/Yenifer/OneDrive/Documents/NetBeansProjects/CrediYa/src/dao/PrestamoDao.java</file>
+            <file>file:/C:/Users/Yenifer/OneDrive/Documents/NetBeansProjects/CrediYa/src/utilidades/GestorErrores.java</file>
+            <file>file:/C:/Users/Yenifer/OneDrive/Documents/NetBeansProjects/CrediYa/src/modelos/Pago.java</file>
+            <file>file:/C:/Users/Yenifer/OneDrive/Documents/NetBeansProjects/CrediYa/src/estrategias/EstrategiaInteres.java</file>
+            <file>file:/C:/Users/Yenifer/OneDrive/Documents/NetBeansProjects/CrediYa/src/estrategias/InteresCompuesto.java</file>
+            <file>file:/C:/Users/Yenifer/OneDrive/Documents/NetBeansProjects/CrediYa/src/estrategias/InteresSimple.java</file>
+            <file>file:/C:/Users/Yenifer/OneDrive/Documents/NetBeansProjects/CrediYa/src/controladores/CreditoControllador.java</file>
+            <file>file:/C:/Users/Yenifer/OneDrive/Documents/NetBeansProjects/CrediYa/src/modelos/Prestamo.java</file>
+            <file>file:/C:/Users/Yenifer/OneDrive/Documents/NetBeansProjects/CrediYa/src/dao/CuotaPlanDao.java</file>
+            <file>file:/C:/Users/Yenifer/OneDrive/Documents/NetBeansProjects/CrediYa/src/modelos/CuotaPlan.java</file>
+            <file>file:/C:/Users/Yenifer/OneDrive/Documents/NetBeansProjects/CrediYa/src/servicios/SimuladorCredito.java</file>
+            <file>file:/C:/Users/Yenifer/OneDrive/Documents/NetBeansProjects/CrediYa/src/excepciones/EntradaInvalida.java</file>
+            <file>file:/C:/Users/Yenifer/OneDrive/Documents/NetBeansProjects/CrediYa/src/utilidades/ConsolaUtil.java</file>
+            <file>file:/C:/Users/Yenifer/OneDrive/Documents/NetBeansProjects/CrediYa/src/vistas/MenuPrincipal.java</file>
+            <file>file:/C:/Users/Yenifer/OneDrive/Documents/NetBeansProjects/CrediYa/src/utilidades/MotorVisual.java</file>
+            <file>file:/C:/Users/Yenifer/OneDrive/Documents/NetBeansProjects/CrediYa/src/vistas/MenuEmpleado.java</file>
+            <file>file:/C:/Users/Yenifer/OneDrive/Documents/NetBeansProjects/CrediYa/src/modelos/Cliente.java</file>
+        </group>
+    </open-files>
+</project-private>

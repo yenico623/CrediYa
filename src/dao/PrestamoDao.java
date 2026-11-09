@@ -13,8 +13,17 @@ public class PrestamoDao {
     public int registrarPrestamo(Prestamo prestamo) throws SQLException{
         int idGenerado = 0;
         
-        String sql = "INSERT INTO prestamos(cliente_id, empleado_id, monto, saldo_capital, interes, cuotas,  fecha_solicitud, fecha_aprobacion, estado )"
-                + "VALUES (? ,? ,? ,? ,? ,? ,? ,? ,? )";
+        String sql = "INSERT INTO prestamos("
+                + " cliente_id,"
+                + " empleado_id,"
+                + " monto,"
+                + " saldo_capital,"
+                + " interes,"
+                + " cuotas,"
+                + " fecha_solicitud,"
+                + " fecha_aprobacion,"
+                + " estado )"
+                + " VALUES (? ,? ,? ,? ,? ,? ,? ,? ,? )";
        
         try (Connection con = dbConnection.getInstancia().getConexion();
         PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)){

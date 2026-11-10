@@ -1,5 +1,6 @@
-package dao;
 
+package dao;
+ 
 import modelos.Prestamo;
 import modelos.Cliente;
 import modelos.Empleado;
@@ -15,12 +16,12 @@ import java.util.ArrayList;
 import java.util.List;
 import modelos.CuotaPlan;
 import utilidades.GestorErrores;
-
+ 
 public class PrestamoDao {
-
+ 
     public int registrarPrestamo(Prestamo prestamo) throws SQLException {
         int idGenerado = 0;
-
+ 
         String sql = "INSERT INTO prestamos("
                 + " cliente_id,"
                 + " empleado_id,"
@@ -32,10 +33,10 @@ public class PrestamoDao {
                 + " fecha_aprobacion,"
                 + " estado )"
                 + " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-
+ 
         try (Connection con = dbConnection.getInstancia().getConexion();
              PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-
+ 
             ps.setInt(1, prestamo.getCliente().getId());
             ps.setInt(2, prestamo.getEmpleado().getIdEmpleado());
             ps.setDouble(3, prestamo.getMonto());
@@ -45,9 +46,9 @@ public class PrestamoDao {
             ps.setDate(7, java.sql.Date.valueOf(prestamo.getFechaSolicitud()));
             ps.setDate(8, java.sql.Date.valueOf(prestamo.getFechaAprobacion()));
             ps.setString(9, prestamo.getEstado());
-
+ 
             int filasAfectadas = ps.executeUpdate();
-
+ 
             if (filasAfectadas > 0) {
                 try (ResultSet rs = ps.getGeneratedKeys()) {
                     if (rs.next()) {
@@ -58,21 +59,21 @@ public class PrestamoDao {
         } catch (SQLException e) {
             System.err.println(GestorErrores.mostrarError(e));
         }
-
+ 
         return idGenerado;
     }
-
+ 
     public int registrarPrestamoConCuotas(Prestamo prestamo, List<CuotaPlan> plan) throws SQLException {
         int idGenerado = 0;
-
+ 
         String sqlPrestamo = "INSERT INTO prestamos (cliente_id, empleado_id, monto, saldo_capital, interes, cuotas, fecha_solicitud, fecha_aprobacion, estado) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         String sqlCuota = "INSERT INTO cuotas_plan (prestamo_id, numero_cuota, fecha_vencimiento, capital_esperado, interes_esperado, capital_pendiente, interes_pendiente, estado) VALUES (?, ?, ?, ?, ?, ?, ?, 'PENDIENTE')";
-
+ 
         Connection con = dbConnection.getInstancia().getConexion();
-
+ 
         try {
             con.setAutoCommit(false);
-
+ 
             try (PreparedStatement ps = con.prepareStatement(sqlPrestamo, Statement.RETURN_GENERATED_KEYS)) {
                 ps.setInt(1, prestamo.getCliente().getId());
                 ps.setInt(2, prestamo.getEmpleado().getIdEmpleado());
@@ -84,14 +85,14 @@ public class PrestamoDao {
                 ps.setDate(8, java.sql.Date.valueOf(prestamo.getFechaAprobacion()));
                 ps.setString(9, prestamo.getEstado());
                 ps.executeUpdate();
-
+ 
                 try (ResultSet rs = ps.getGeneratedKeys()) {
                     if (rs.next()) {
                         idGenerado = rs.getInt(1);
                     }
                 }
             }
-
+ 
             for (CuotaPlan cuota : plan) {
                 try (PreparedStatement psCuota = con.prepareStatement(sqlCuota)) {
                     psCuota.setInt(1, idGenerado);
@@ -104,34 +105,34 @@ public class PrestamoDao {
                     psCuota.executeUpdate();
                 }
             }
-
+ 
             con.commit();
             con.setAutoCommit(true);
-
+ 
         } catch (SQLException e) {
             con.rollback();
             con.setAutoCommit(true);
             System.err.println(GestorErrores.mostrarError(e));
         }
-
+ 
         return idGenerado;
     }
-
+ 
     public List<String[]> listarPrestamosAsignadosEmpleado(int empleadoId) throws SQLException {
         List<String[]> lista = new ArrayList<>();
-
+ 
         String sql = "SELECT p.id, per.nombre AS cliente, p.saldo_capital, p.estado "
                 + "FROM prestamos p "
                 + "INNER JOIN clientes c ON p.cliente_id = c.id "
                 + "INNER JOIN personas per ON c.persona_id = per.id "
                 + "WHERE p.empleado_id = ? AND p.estado IN ('ACTIVO', 'EN_MORA') "
                 + "ORDER BY p.id";
-
+ 
         try (Connection con = dbConnection.getInstancia().getConexion();
              PreparedStatement ps = con.prepareStatement(sql)) {
-
+ 
             ps.setInt(1, empleadoId);
-
+ 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     lista.add(new String[]{
@@ -143,27 +144,28 @@ public class PrestamoDao {
                 }
             }
         }
-
+ 
         return lista;
     }
-
+ 
     public String[] obtenerPrestamoParaPago(int prestamoId, int empleadoId) throws SQLException {
         String sql = "SELECT p.id, per.nombre AS cliente, "
                 + "(SELECT COUNT(*) FROM cuotas_plan cp "
                 + "WHERE cp.prestamo_id = p.id "
-                + "AND cp.estado IN ('PENDIENTE', 'ABONADA')) AS cuotas_pendientes "
+                + "AND cp.estado IN ('PENDIENTE', 'ABONADA') "
+                + "AND (COALESCE(cp.capital_pendiente, 0) + COALESCE(cp.interes_pendiente, 0) + COALESCE(cp.mora_acumulada, 0)) > 0) AS cuotas_pendientes "
                 + "FROM prestamos p "
                 + "INNER JOIN clientes c ON p.cliente_id = c.id "
                 + "INNER JOIN personas per ON c.persona_id = per.id "
                 + "WHERE p.id = ? AND p.empleado_id = ? "
                 + "AND p.estado IN ('ACTIVO', 'EN_MORA')";
-
+ 
         try (Connection con = dbConnection.getInstancia().getConexion();
              PreparedStatement ps = con.prepareStatement(sql)) {
-
+ 
             ps.setInt(1, prestamoId);
             ps.setInt(2, empleadoId);
-
+ 
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     return new String[]{
@@ -174,10 +176,10 @@ public class PrestamoDao {
                 }
             }
         }
-
+ 
         return null;
     }
-
+ 
     private static final String SELECT_PRESTAMOS = "SELECT p.id, p.monto, p.saldo_capital, p.interes, p.cuotas, p.estado, p.fecha_solicitud, p.fecha_aprobacion, "
             + "c.id AS cliente_id, per.nombre AS cliente_nombre, per.documento AS cliente_documento, "
             + "e.id AS empleado_id, pe.nombre AS empleado_nombre "
@@ -186,7 +188,7 @@ public class PrestamoDao {
             + "INNER JOIN personas per ON c.persona_id = per.id "
             + "LEFT JOIN empleados e ON p.empleado_id = e.id "
             + "LEFT JOIN personas pe ON e.persona_id = pe.id ";
-
+ 
     private Prestamo mapearPrestamo(ResultSet rs) throws SQLException {
         Cliente cliente = new Cliente(
                 rs.getInt("cliente_id"),
@@ -196,18 +198,18 @@ public class PrestamoDao {
                 null,
                 null,
                 null);
-
+ 
         Empleado empleado = null;
         int empleadoId = rs.getInt("empleado_id");
-
+ 
         if (!rs.wasNull()) {
             empleado = new Empleado();
             empleado.setIdEmpleado(empleadoId);
             empleado.setNombre(rs.getString("empleado_nombre"));
         }
-
+ 
         java.sql.Date fechaAprobacion = rs.getDate("fecha_aprobacion");
-
+ 
         return new Prestamo(
                 rs.getInt("id"),
                 cliente,
@@ -220,48 +222,48 @@ public class PrestamoDao {
                 fechaAprobacion != null ? fechaAprobacion.toLocalDate() : null,
                 rs.getString("estado"));
     }
-
+ 
     private List<Prestamo> consultar(String condicion, Object parametro) throws SQLException {
         List<Prestamo> lista = new ArrayList<>();
         String sql = SELECT_PRESTAMOS + condicion + " ORDER BY p.id";
-
+ 
         try (Connection con = dbConnection.getInstancia().getConexion();
              PreparedStatement ps = con.prepareStatement(sql)) {
-
+ 
             if (parametro != null) {
                 ps.setObject(1, parametro);
             }
-
+ 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     lista.add(mapearPrestamo(rs));
                 }
             }
         }
-
+ 
         return lista;
     }
-
+ 
     public List<Prestamo> listarTodos() throws SQLException {
         return consultar("", null);
     }
-
+ 
     public List<Prestamo> listarPorEstado(String estado) throws SQLException {
         return consultar("WHERE p.estado = ?", estado);
     }
-
+ 
     public List<Prestamo> listarAprobadosSinEmpleado() throws SQLException {
         return consultar("WHERE p.estado = 'APROBADO'", null);
     }
-
+ 
     public Prestamo obtenerPorId(int prestamoId) throws SQLException {
         List<Prestamo> lista = consultar("WHERE p.id = ?", prestamoId);
         return lista.isEmpty() ? null : lista.get(0);
     }
-
+ 
     public List<String[]> listarMorosos() throws SQLException {
         List<String[]> lista = new ArrayList<>();
-
+ 
         String sql = "SELECT p.id as prestamo_id, per.nombre as cliente_nombre, per.telefono, "
                    + "MAX(pa.fecha_reporte) as ultimo_pago, "
                    + "DATEDIFF(CURDATE(), MAX(pa.fecha_reporte)) as dias_sin_pagar "
@@ -271,14 +273,14 @@ public class PrestamoDao {
                    + "LEFT JOIN pagos pa ON p.id = pa.prestamo_id "
                    + "GROUP BY p.id, per.nombre, per.telefono "
                    + "HAVING dias_sin_pagar > 30 OR ultimo_pago IS NULL";
-
+ 
         try (Connection con = dbConnection.getInstancia().getConexion();
              PreparedStatement ps = con.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
-
+ 
             while (rs.next()) {
                 boolean conPagos = rs.getDate("ultimo_pago") != null;
-
+ 
                 lista.add(new String[]{
                     String.valueOf(rs.getInt("prestamo_id")),
                     rs.getString("cliente_nombre"),
@@ -288,19 +290,19 @@ public class PrestamoDao {
                 });
             }
         }
-
+ 
         return lista;
     }
-
+ 
     public List<String[]> listarPorCliente(int clienteId) throws SQLException {
         List<String[]> lista = new ArrayList<>();
         String sql = "SELECT id, monto, saldo_capital, estado, proxima_fecha_pago FROM prestamos WHERE cliente_id = ?";
-
+ 
         try (Connection con = dbConnection.getInstancia().getConexion();
              PreparedStatement ps = con.prepareStatement(sql)) {
-
+ 
             ps.setInt(1, clienteId);
-
+ 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     lista.add(new String[]{
@@ -313,10 +315,10 @@ public class PrestamoDao {
                 }
             }
         }
-
+ 
         return lista;
     }
-
+ 
     public List<String[]> listarPorEmpleado(int empleadoId) throws SQLException {
         List<String[]> lista = new ArrayList<>();
         String sql = "SELECT p.id, per.nombre AS cliente, p.saldo_capital, p.estado, p.proxima_fecha_pago "
@@ -324,12 +326,12 @@ public class PrestamoDao {
                    + "INNER JOIN clientes c ON p.cliente_id = c.id "
                    + "INNER JOIN personas per ON c.persona_id = per.id "
                    + "WHERE p.empleado_id = ?";
-
+ 
         try (Connection con = dbConnection.getInstancia().getConexion();
              PreparedStatement ps = con.prepareStatement(sql)) {
-
+ 
             ps.setInt(1, empleadoId);
-
+ 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     lista.add(new String[]{
@@ -342,22 +344,22 @@ public class PrestamoDao {
                 }
             }
         }
-
+ 
         return lista;
     }
-
+ 
     public List<String[]> listarActivosPorCliente(int clienteId) throws SQLException {
         List<String[]> lista = new ArrayList<>();
         String sql = "SELECT p.id, p.monto, p.saldo_capital, p.cuotas, p.estado, "
                    + "EXISTS (SELECT 1 FROM pagos pg WHERE pg.prestamo_id = p.id AND pg.estado = 'EN_REVISION') AS pago_pendiente "
                    + "FROM prestamos p WHERE p.cliente_id = ? AND p.estado IN ('ACTIVO', 'EN_MORA') "
                    + "ORDER BY p.id";
-
+ 
         try (Connection con = dbConnection.getInstancia().getConexion();
              PreparedStatement ps = con.prepareStatement(sql)) {
-
+ 
             ps.setInt(1, clienteId);
-
+ 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     lista.add(new String[]{
@@ -371,76 +373,76 @@ public class PrestamoDao {
                 }
             }
         }
-
+ 
         return lista;
     }
-
+ 
     public boolean existeActivoDelCliente(int prestamoId, int clienteId) throws SQLException {
         String sql = "SELECT id FROM prestamos WHERE id = ? AND cliente_id = ? AND estado IN ('ACTIVO', 'EN_MORA')";
-
+ 
         try (Connection con = dbConnection.getInstancia().getConexion();
              PreparedStatement ps = con.prepareStatement(sql)) {
-
+ 
             ps.setInt(1, prestamoId);
             ps.setInt(2, clienteId);
-
+ 
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();
             }
         }
     }
-
+ 
     public boolean bloquearActivo(Connection con, int prestamoId) throws SQLException {
         String sql = "SELECT id FROM prestamos WHERE id = ? AND estado IN ('ACTIVO', 'EN_MORA') FOR UPDATE";
-
+ 
         try (PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, prestamoId);
-
+ 
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();
             }
         }
     }
-
+ 
     public boolean bloquearActivoDeEmpleado(Connection con, int prestamoId, int empleadoId) throws SQLException {
         String sql = "SELECT id FROM prestamos "
                    + "WHERE id = ? AND empleado_id = ? "
                    + "AND estado IN ('ACTIVO', 'EN_MORA') FOR UPDATE";
-
+ 
         try (PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, prestamoId);
             ps.setInt(2, empleadoId);
-
+ 
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();
             }
         }
     }
-
+ 
     public void actualizarSaldoYEstado(Connection con, int prestamoId, BigDecimal capitalAplicado, String estado, LocalDate proximaFecha) throws SQLException {
         String sql = "UPDATE prestamos "
                    + "SET saldo_capital = GREATEST(0, saldo_capital - ?), "
                    + "estado = ?, proxima_fecha_pago = ? "
                    + "WHERE id = ?";
-
+ 
         try (PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setBigDecimal(1, capitalAplicado);
             ps.setString(2, estado);
-
+ 
             if (proximaFecha != null) {
                 ps.setDate(3, java.sql.Date.valueOf(proximaFecha));
             } else {
                 ps.setNull(3, java.sql.Types.DATE);
             }
-
+ 
             ps.setInt(4, prestamoId);
             ps.executeUpdate();
         }
     }
-
+ 
     public void insertarSolicitud(int clienteId, double monto, int cuotas, double interes) throws SQLException {
         String sql = "INSERT INTO prestamos (cliente_id, empleado_id, monto, saldo_capital, interes, cuotas, fecha_solicitud, estado) VALUES (?, NULL, ?, ?, ?, ?, CURDATE(), 'SOLICITADO')";
-
+ 
         try (Connection con = dbConnection.getInstancia().getConexion();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, clienteId);
@@ -451,13 +453,13 @@ public class PrestamoDao {
             ps.executeUpdate();
         }
     }
-
+ 
     public Prestamo obtenerSolicitudParaActualizar(Connection con, int prestamoId) throws SQLException {
         String sql = "SELECT id, monto, interes, cuotas FROM prestamos WHERE id = ? AND estado = 'SOLICITADO' FOR UPDATE";
-
+ 
         try (PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, prestamoId);
-
+ 
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     Prestamo prestamo = new Prestamo();
@@ -469,35 +471,35 @@ public class PrestamoDao {
                 }
             }
         }
-
+ 
         return null;
     }
-
+ 
     public boolean aprobarSolicitud(Connection con, int prestamoId, LocalDate proximaFecha) throws SQLException {
         String sql = "UPDATE prestamos SET estado = 'APROBADO', fecha_aprobacion = CURDATE(), proxima_fecha_pago = ? "
                    + "WHERE id = ? AND estado = 'SOLICITADO'";
-
+ 
         try (PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setDate(1, java.sql.Date.valueOf(proximaFecha));
             ps.setInt(2, prestamoId);
             return ps.executeUpdate() == 1;
         }
     }
-
+ 
     public boolean rechazarSolicitud(int prestamoId) throws SQLException {
         String sql = "UPDATE prestamos SET estado = 'RECHAZADO' WHERE id = ? AND estado = 'SOLICITADO'";
-
+ 
         try (Connection con = dbConnection.getInstancia().getConexion();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, prestamoId);
             return ps.executeUpdate() == 1;
         }
     }
-
+ 
     public boolean asignarEmpleado(int prestamoId, int empleadoId) throws SQLException {
         String sql = "UPDATE prestamos SET empleado_id = ?, estado = 'ACTIVO' "
                    + "WHERE id = ? AND estado = 'APROBADO'";
-
+ 
         try (Connection con = dbConnection.getInstancia().getConexion();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, empleadoId);

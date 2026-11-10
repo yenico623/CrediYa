@@ -32,6 +32,11 @@
             <file>file:/C:/Users/Yenifer/OneDrive/Documents/NetBeansProjects/CrediYa/src/modelos/DetalleDistribucionPago.java</file>
             <file>file:/C:/Users/Yenifer/OneDrive/Documents/NetBeansProjects/CrediYa/src/modelos/Empleado.java</file>
             <file>file:/C:/Users/Yenifer/OneDrive/Documents/NetBeansProjects/CrediYa/src/modelos/Persona.java</file>
+            <file>file:/C:/Users/Yenifer/OneDrive/Documents/NetBeansProjects/CrediYa/src/servicios/ClienteService.java</file>
+            <file>file:/C:/Users/Yenifer/OneDrive/Documents/NetBeansProjects/CrediYa/src/servicios/EmpleadoService.java</file>
+            <file>file:/C:/Users/Yenifer/OneDrive/Documents/NetBeansProjects/CrediYa/src/dao/EmpleadoDao.java</file>
+            <file>file:/C:/Users/Yenifer/OneDrive/Documents/NetBeansProjects/CrediYa/src/vistas/MenuPagoCliente.java</file>
+            <file>file:/C:/Users/Yenifer/OneDrive/Documents/NetBeansProjects/CrediYa/src/vistas/MenuPagoEmpleado.java</file>
         </group>
     </open-files>
 </project-private>

@@ -10,97 +10,144 @@ import java.sql.SQLException;
 
 public class MenuAdmin {
 
-    public void iniciar(Usuario adminEnSesion) {
-        boolean volver = false;
-        
-        while (!volver) {
-            String[] opciones = {
-                "Gestionar empleados (Eliminar)",
-                "Reporte general de clientes",
-                "Reporte general de empleados",
-                "Reporte general de prestamos",
-                "Reporte de clientes morosos"
-            };
+public void iniciar(Usuario adminEnSesion) {
+    boolean volver = false;
 
-            MotorVisual.dibujarMenu("PANEL DE ADMINISTRACION", opciones, "Cerrar sesion");
-            int opcion = ConsolaUtil.leerEntero("   > Seleccione una opcion: ");
+    while (!volver) {
+        String[] opciones = {
+            "Gestion de empleados",
+            "Gestion de clientes",
+            "Solicitudes de credito",
+            "Reportes"
+        };
 
-            switch (opcion) {
-                case 1 -> gestionarEmpleados();
-                case 2 -> reporteClientes();
-                case 3 -> reporteEmpleados();
-                case 4 -> reportePrestamos();
-                case 5 -> reporteMorosos();
-                case 6 -> volver = true;
-                default -> {
-                    System.out.println("  [!] ERROR: Ingrese una opcion valida.");
-                    ConsolaUtil.pausar();
-                }
-            }
-        }
-    }
+        MotorVisual.dibujarMenu("PANEL DE ADMINISTRACION", opciones, "Cerrar sesion");
+        int opcion = ConsolaUtil.leerEntero("   > Seleccione una opcion: ");
 
-    private void gestionarEmpleados() {
-        System.out.println("\n  ===================================================");
-        System.out.println("                 GESTION DE EMPLEADOS                ");
-        System.out.println("  ===================================================");
-
-        String sql = "SELECT e.id, p.nombre, p.documento, e.salario FROM empleados e INNER JOIN personas p ON e.persona_id = p.id";
-
-        try (Connection con = utilidades.dbConnection.getInstancia().getConexion();
-             PreparedStatement ps = con.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-
-            System.out.println("  ID EMPLEADO\t|\tDOCUMENTO\t|\tNOMBRE");
-            System.out.println("  ---------------------------------------------------");
-            boolean hayEmpleados = false;
-            while (rs.next()) {
-                hayEmpleados = true;
-                System.out.println("  " + rs.getInt("id") + "\t\t|\t" + rs.getString("documento") + "\t|\t" + rs.getString("nombre"));
-            }
-            System.out.println("  ===================================================");
-
-            if (!hayEmpleados) {
-                System.out.println("  [i] No hay empleados registrados.");
+        switch (opcion) {
+            case 1 -> menuEmpleados();
+            case 2 -> menuClientes();
+            case 3 -> menuSolicitudes();
+            case 4 -> menuReportes();
+            case 5 -> volver = true;
+            default -> {
+                System.out.println("  [!] ERROR: Ingrese una opcion valida.");
                 ConsolaUtil.pausar();
-                return;
             }
-
-        } catch (SQLException e) {
-            System.out.println("  [X] Error al listar empleados: " + e.getMessage());
-            ConsolaUtil.pausar();
-            return;
         }
-
-        int empleadoId = ConsolaUtil.leerEntero("\n    > Ingrese el ID del empleado a eliminar (o '0' para cancelar): ");
-        if (empleadoId == 0) {
-            return;
-        }
-
-        String confirmar = ConsolaUtil.leerTexto("    > Seguro que desea eliminar este empleado? (S/N): ");
-        if (!confirmar.equalsIgnoreCase("s")) {
-            System.out.println("  [i] Operacion cancelada.");
-            ConsolaUtil.pausar();
-            return;
-        }
-
-        String sqlDelete = "DELETE FROM empleados WHERE id = ?";
-        try (Connection con = utilidades.dbConnection.getInstancia().getConexion();
-             PreparedStatement psDel = con.prepareStatement(sqlDelete)) {
-            psDel.setInt(1, empleadoId);
-            int filas = psDel.executeUpdate();
-
-            if (filas > 0) {
-                System.out.println("  [OK] Empleado eliminado exitosamente del sistema.");
-            } else {
-                System.out.println("  [X] No se encontro un empleado con ese ID.");
-            }
-        } catch (SQLException e) {
-            System.out.println("  [X] Error al eliminar : " + e.getMessage());
-        }
-
-        ConsolaUtil.pausar();
     }
+}
+
+private void menuEmpleados() {
+    String[] opciones = {
+        "Crear empleado",
+        "Listar empleados",
+        "Consultar empleado",
+        "Actualizar empleado"
+    };
+
+    MotorVisual.dibujarMenu("GESTION DE EMPLEADOS", opciones, "Volver");
+    int opcion = ConsolaUtil.leerEntero("   > Seleccione una opcion: ");
+
+    switch (opcion) {
+        case 1, 2, 3, 4 -> {
+            System.out.println("  [i] Esta funcionalidad se implementara en el siguiente paso.");
+            ConsolaUtil.pausar();
+        }
+        case 5 -> {
+        }
+        default -> {
+            System.out.println("  [!] ERROR: Ingrese una opcion valida.");
+            ConsolaUtil.pausar();
+        }
+    }
+}
+
+private void menuClientes() {
+    String[] opciones = {
+        "Crear cliente",
+        "Listar clientes",
+        "Consultar cliente",
+        "Actualizar cliente"
+    };
+
+    MotorVisual.dibujarMenu("GESTION DE CLIENTES", opciones, "Volver");
+    int opcion = ConsolaUtil.leerEntero("   > Seleccione una opcion: ");
+
+    switch (opcion) {
+        case 1, 2, 3, 4 -> {
+            System.out.println("  [i] Esta funcionalidad se implementara en el siguiente paso.");
+            ConsolaUtil.pausar();
+        }
+        case 5 -> {
+        }
+        default -> {
+            System.out.println("  [!] ERROR: Ingrese una opcion valida.");
+            ConsolaUtil.pausar();
+        }
+    }
+}
+
+private void menuSolicitudes() {
+    String[] opciones = {
+        "Listar solicitudes",
+        "Consultar solicitud",
+        "Aprobar solicitud",
+        "Rechazar solicitud",
+        "Asignar empleado"
+    };
+
+    MotorVisual.dibujarMenu("GESTION DE SOLICITUDES DE CREDITO", opciones, "Volver");
+    int opcion = ConsolaUtil.leerEntero("   > Seleccione una opcion: ");
+
+    switch (opcion) {
+        case 1, 2, 3, 4, 5 -> {
+            System.out.println("  [i] Esta funcionalidad se implementara posteriormente.");
+            ConsolaUtil.pausar();
+        }
+        case 6 -> {
+        }
+        default -> {
+            System.out.println("  [!] ERROR: Ingrese una opcion valida.");
+            ConsolaUtil.pausar();
+        }
+    }
+}
+
+private void menuReportes() {
+    boolean volver = false;
+
+    while (!volver) {
+        String[] opciones = {
+            "Reporte general de clientes",
+            "Reporte general de empleados",
+            "Reporte general de prestamos",
+            "Reporte de clientes morosos",
+            "Reportes con Stream API",
+            "Reporte serializable"
+        };
+
+        MotorVisual.dibujarMenu("REPORTES", opciones, "Volver");
+        int opcion = ConsolaUtil.leerEntero("   > Seleccione una opcion: ");
+
+        switch (opcion) {
+            case 1 -> reporteClientes();
+            case 2 -> reporteEmpleados();
+            case 3 -> reportePrestamos();
+            case 4 -> reporteMorosos();
+            case 5, 6 -> {
+                System.out.println("  [i] Esta funcionalidad se implementara posteriormente.");
+                ConsolaUtil.pausar();
+            }
+            case 7 -> volver = true;
+            default -> {
+                System.out.println("  [!] ERROR: Ingrese una opcion valida.");
+                ConsolaUtil.pausar();
+            }
+        }
+    }
+}
+
 
     private void reporteClientes() {
         System.out.println("\n  ===================================================");
@@ -175,7 +222,6 @@ public class MenuAdmin {
                 String montoFmt = "$" + String.format("%,.0f", montoDbl).replace(",", ".");
                 String saldoFmt = "$" + String.format("%,.0f", saldoDbl).replace(",", ".");
                 
-                // Filas formateadas con las mismas columnas fijas
                 System.out.printf(" %-6d | %-20s | %-12s | %-12s | %-10s\n", 
                                   rs.getInt("id"), 
                                   rs.getString("cliente"), 

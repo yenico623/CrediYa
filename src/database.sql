@@ -2,14 +2,12 @@ DROP DATABASE IF EXISTS crediya_db;
 CREATE DATABASE crediya_db;
 USE crediya_db;
 
-
 CREATE TABLE usuarios (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
     password VARCHAR(100) NOT NULL,
     rol ENUM('ADMIN', 'EMPLEADO', 'CLIENTE') NOT NULL
 );
-
 
 CREATE TABLE personas (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -22,7 +20,6 @@ CREATE TABLE personas (
     FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
 );
 
-
 CREATE TABLE empleados (
     id INT AUTO_INCREMENT PRIMARY KEY,
     persona_id INT UNIQUE NOT NULL,
@@ -30,13 +27,11 @@ CREATE TABLE empleados (
     FOREIGN KEY (persona_id) REFERENCES personas(id) ON DELETE CASCADE
 );
 
-
 CREATE TABLE clientes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     persona_id INT UNIQUE NOT NULL,
     FOREIGN KEY (persona_id) REFERENCES personas(id) ON DELETE CASCADE
 );
-
 
 CREATE TABLE prestamos (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -44,11 +39,12 @@ CREATE TABLE prestamos (
     empleado_id INT, 
     monto DECIMAL(12,2) NOT NULL,            
     saldo_capital DECIMAL(12,2) NOT NULL,    
-    interes DECIMAL(5,2) NOT NULL,           
+    interes DECIMAL(5,2) NOT NULL,            
     cuotas INT NOT NULL,
     fecha_solicitud DATE NOT NULL,
     fecha_aprobacion DATE,
-    estado ENUM('SOLICITADO', 'ASIGNADO', 'ACTIVO', 'PAGADO', 'RECHAZADO', 'EN_MORA') DEFAULT 'SOLICITADO',
+    proxima_fecha_pago DATE DEFAULT NULL,
+    estado ENUM('SOLICITADO', 'APROBADO', 'ACTIVO', 'PAGADO', 'RECHAZADO', 'EN_MORA') DEFAULT 'SOLICITADO',
     FOREIGN KEY (cliente_id) REFERENCES clientes(id),
     FOREIGN KEY (empleado_id) REFERENCES empleados(id)
 );
@@ -67,14 +63,13 @@ CREATE TABLE cuotas_plan (
     FOREIGN KEY (prestamo_id) REFERENCES prestamos(id) ON DELETE CASCADE
 );
 
-
 CREATE TABLE pagos (
     id INT AUTO_INCREMENT PRIMARY KEY,
     prestamo_id INT NOT NULL,
     metodo_pago ENUM('EFECTIVO', 'TRANSFERENCIA', 'TARJETA') NOT NULL, 
     numero_referencia VARCHAR(50) NULL,
     fecha_reporte DATE NOT NULL,
-    fecha_aplicacion DATETIME NULL,         
+    fecha_aplicacion DATETIME NULL,          
     monto DECIMAL(10,2) NOT NULL,            
     estado ENUM('EN_REVISION', 'APROBADO', 'ERROR') DEFAULT 'EN_REVISION', 
     empleado_revisor_id INT, 
@@ -93,14 +88,25 @@ CREATE TABLE detalles_distribucion_pago (
     FOREIGN KEY (cuota_id) REFERENCES cuotas_plan(id)
 );
 
-
 INSERT INTO usuarios (username, password, rol) VALUES ('admin', 'admin123', 'ADMIN');
 
-desc empleados;
-ALTER TABLE clientes ADD COLUMN empleado_id INT;
+INSERT INTO usuarios (username, password, rol) VALUES ('carlos.emp', '1234', 'EMPLEADO');
+INSERT INTO personas (usuario_id, nombre, documento, correo, telefono, fecha_nacimiento) 
+VALUES (LAST_INSERT_ID(), 'Carlos Perez', '10987654', 'carlos@crediya.com', '3112223344', '1990-05-12');
+INSERT INTO empleados (persona_id, salario) VALUES (LAST_INSERT_ID(), 2500000.00);
 
-ALTER TABLE clientes ADD CONSTRAINT fk_cliente_empleado 
-FOREIGN KEY (empleado_id) REFERENCES empleados(id);
-SELECT * FROM empleados;
-SELECT *  FROM personas;
-SELECT * FROM usuarios;
+INSERT INTO usuarios (username, password, rol) VALUES ('maria.cli', '1234', 'CLIENTE');
+INSERT INTO personas (usuario_id, nombre, documento, correo, telefono, fecha_nacimiento) 
+VALUES (LAST_INSERT_ID(), 'Maria Duarte', '63554433', 'maria@gmail.com', '3154445566', '1995-08-20');
+INSERT INTO clientes (persona_id) VALUES (LAST_INSERT_ID());
+
+INSERT INTO usuarios (username, password, rol) VALUES ('andres.cli', '1234', 'CLIENTE');
+INSERT INTO personas (usuario_id, nombre, documento, correo, telefono, fecha_nacimiento) 
+VALUES (LAST_INSERT_ID(), 'Andres Lopez', '91223344', 'andres@gmail.com', '3205556677', '1988-12-04');
+INSERT INTO clientes (persona_id) VALUES (LAST_INSERT_ID());
+
+INSERT INTO prestamos (cliente_id, empleado_id, monto, saldo_capital, interes, cuotas, fecha_solicitud, estado) 
+VALUES (1, 1, 3000000.00, 3000000.00, 1.50, 12, CURDATE(), 'SOLICITADO');
+
+INSERT INTO prestamos (cliente_id, empleado_id, monto, saldo_capital, interes, cuotas, fecha_solicitud, fecha_aprobacion, proxima_fecha_pago, estado) 
+VALUES (2, 1, 5000000.00, 4800000.00, 2.00, 24, '2026-01-10', '2026-01-15', DATE_SUB(CURDATE(), INTERVAL 40 DAY), 'ACTIVO');

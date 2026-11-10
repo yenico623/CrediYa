@@ -8,9 +8,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import dao.EmpleadoDao;
 
 public class MenuPrincipal {
-    public void iniciar() {
+    public void iniciar() throws SQLException {
         boolean salir = false;
         
         while (!salir) {
@@ -37,7 +38,7 @@ public class MenuPrincipal {
         }
     }
     
-    private void accederPortalCliente() {
+    private void accederPortalCliente() throws SQLException {
         boolean volver = false;
         while (!volver) {
             String[] opcionesCliente = {
@@ -95,59 +96,69 @@ public class MenuPrincipal {
         return cliente;
     }
     
-    private void accederPortalOperativo() {
-        boolean volver = false;
-        dao.UsuarioDao usuarioDao = new dao.UsuarioDao();
-        
-        while (!volver) {
-            String[] opcionesOperativo = {
-                "Iniciar sesion"
-            };
-            
-            MotorVisual.dibujarMenu("BIENVENIDO AL PORTAL OPERATIVO", opcionesOperativo, "Volver al menu principal");
-            int opcion = ConsolaUtil.leerEntero("   > Seleccione una opcion: ");
-            
-            switch (opcion) {
-                case 1 -> {
-                    String usuario = ConsolaUtil.leerTexto("    > Ingrese su usuario: ");
-                    String password = ConsolaUtil.leerTexto("    > Ingrese su contrasena: ");
-                    System.out.println("  [!] Validando credenciales...");
-                    
-                    try {
-                        modelos.Usuario usuarioLogueado = usuarioDao.autenticarUsuario(usuario, password);
-                        
-                        if (usuarioLogueado != null) {
-                            System.out.println("  [OK] Acceso concedido.");
-                            ConsolaUtil.pausar();
-                            
-                            String rol = usuarioLogueado.getRol();
-                            
-                            if (rol != null && rol.equalsIgnoreCase("ADMIN")) {
-                                vistas.MenuAdmin menuAdmin = new vistas.MenuAdmin();
-                                menuAdmin.iniciar(usuarioLogueado);
-                            } else {
-                                modelos.Empleado empleado = new modelos.Empleado();
-                                empleado.setId(usuarioLogueado.getId());
-                                vistas.MenuEmpleado menuEmp = new vistas.MenuEmpleado();
-                                menuEmp.iniciar(empleado);
-                            }
-                            
-                            volver = true; 
+   
+private void accederPortalOperativo() {
+    boolean volver = false;
+    dao.UsuarioDao usuarioDao = new dao.UsuarioDao();
+
+    while (!volver) {
+        String[] opcionesOperativo = {
+            "Iniciar sesion"
+        };
+
+        MotorVisual.dibujarMenu("BIENVENIDO AL PORTAL OPERATIVO", opcionesOperativo, "Volver al menu principal");
+        int opcion = ConsolaUtil.leerEntero("   > Seleccione una opcion: ");
+
+        switch (opcion) {
+            case 1 -> {
+                String usuario = ConsolaUtil.leerTexto("    > Ingrese su usuario: ");
+                String password = ConsolaUtil.leerTexto("    > Ingrese su contrasena: ");
+                System.out.println("  [!] Validando credenciales...");
+
+                try {
+                    modelos.Usuario usuarioLogueado = usuarioDao.autenticarUsuario(usuario, password);
+
+                    if (usuarioLogueado == null) {
+                        System.out.println("  [X] Usuario o contrasena incorrectos.");
+                        ConsolaUtil.pausar();
+                        break;
+                    }
+
+                    String rol = usuarioLogueado.getRol();
+
+                    if (rol != null && rol.equalsIgnoreCase("ADMIN")) {
+                        vistas.MenuAdmin menuAdmin = new vistas.MenuAdmin();
+                        menuAdmin.iniciar(usuarioLogueado);
+
+                    } else if (rol != null && rol.equalsIgnoreCase("EMPLEADO")) {
+                        dao.EmpleadoDao empleadoDao = new dao.EmpleadoDao();
+                        modelos.Empleado empleado = empleadoDao.obtenerPorUsuarioId(usuarioLogueado.getId());
+
+                        if (empleado != null) {
+                            vistas.MenuEmpleado menuEmp = new vistas.MenuEmpleado();
+                            menuEmp.iniciar(empleado);
                         } else {
-                            System.out.println("  [X] Usuario o contrasena incorrectos.");
+                            System.out.println("  [X] No se encontraron los datos del empleado.");
                             ConsolaUtil.pausar();
                         }
-                    } catch (SQLException e) {
-                        System.out.println("  [X] Error de conexion: " + e.getMessage());
+
+                    } else {
+                        System.out.println("  [X] El usuario no tiene permisos para acceder al portal operativo.");
                         ConsolaUtil.pausar();
                     }
-                }
-                case 2 -> volver = true;
-                default -> {
-                    System.out.println("  [!] Opcion invalida.");
+
+                } catch (SQLException e) {
+                    System.out.println("  [X] Error de conexion: " + e.getMessage());
                     ConsolaUtil.pausar();
                 }
             }
+            case 2 -> volver = true;
+            default -> {
+                System.out.println("  [!] Opcion invalida.");
+                ConsolaUtil.pausar();
+            }
         }
     }
+}
+
 }

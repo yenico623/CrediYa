@@ -1,3 +1,4 @@
+
 package dao;
 
 import java.sql.Connection;
@@ -12,7 +13,7 @@ import utilidades.dbConnection;
 import utilidades.GestorErrores;
 
 public class PagoDao {
-    
+
     public int registrarPagoConDetalle(int prestamoId, String metodoPago, String referencia, double monto, int empleadoId) throws SQLException {
         int idGenerado = 0;
         String sqlPago = "INSERT INTO pagos (prestamo_id, metodo_pago, numero_referencia, fecha_reporte, monto, estado, empleado_revisor_id) VALUES (?, ?, ?, ?, ?, 'APROBADO', ?)";
@@ -22,6 +23,7 @@ public class PagoDao {
         String sqlUpdatePrestamo = "UPDATE prestamos SET saldo_capital = GREATEST(0, saldo_capital - ?) WHERE id = ?";
 
         Connection con = dbConnection.getInstancia().getConexion();
+
         try {
             con.setAutoCommit(false);
 
@@ -47,6 +49,7 @@ public class PagoDao {
 
             try (PreparedStatement psCuota = con.prepareStatement(sqlBuscarCuota)) {
                 psCuota.setInt(1, prestamoId);
+
                 try (ResultSet rs = psCuota.executeQuery()) {
                     if (rs.next()) {
                         cuotaId = rs.getInt("id");
@@ -91,38 +94,102 @@ public class PagoDao {
 
             con.commit();
             con.setAutoCommit(true);
+
         } catch (SQLException e) {
             con.rollback();
             con.setAutoCommit(true);
             System.err.println(GestorErrores.mostrarError(e));
         }
+
         return idGenerado;
     }
 
     public List<String[]> listarPagos() throws SQLException {
         List<String[]> lista = new ArrayList<>();
-        String sql = "SELECT pa.id, pa.prestamo_id, pa.metodo_pago, pa.monto, pa.fecha_reporte, per.nombre as cliente_nombre "
-                   + "FROM pagos pa "
-                   + "INNER JOIN prestamos pr ON pa.prestamo_id = pr.id "
-                   + "INNER JOIN clientes c ON pr.cliente_id = c.id "
-                   + "INNER JOIN personas per ON c.persona_id = per.id";
+
+        String sql = "SELECT pa.id, pa.prestamo_id, pa.metodo_pago, pa.monto, pa.fecha_reporte, per.nombre AS cliente_nombre "
+                + "FROM pagos pa "
+                + "INNER JOIN prestamos pr ON pa.prestamo_id = pr.id "
+                + "INNER JOIN clientes c ON pr.cliente_id = c.id "
+                + "INNER JOIN personas per ON c.persona_id = per.id";
 
         try (Connection con = dbConnection.getInstancia().getConexion();
              PreparedStatement ps = con.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
-                String[] fila = {
+                lista.add(new String[]{
                     String.valueOf(rs.getInt("id")),
                     String.valueOf(rs.getInt("prestamo_id")),
                     rs.getString("cliente_nombre"),
                     String.valueOf(rs.getDouble("monto")),
                     rs.getString("metodo_pago"),
                     String.valueOf(rs.getDate("fecha_reporte"))
-                };
-                lista.add(fila);
+                });
             }
         }
+
+        return lista;
+    }
+
+    public List<String[]> listarPagosPendientesEmpleado(int empleadoId) throws SQLException {
+        List<String[]> lista = new ArrayList<>();
+
+        String sql = "SELECT pa.id, pa.prestamo_id, per.nombre AS cliente, pa.monto, pa.metodo_pago, pa.numero_referencia, pa.fecha_reporte "
+                + "FROM pagos pa "
+                + "INNER JOIN prestamos p ON pa.prestamo_id = p.id "
+                + "INNER JOIN clientes c ON p.cliente_id = c.id "
+                + "INNER JOIN personas per ON c.persona_id = per.id "
+                + "WHERE pa.estado = 'EN_REVISION' AND p.empleado_id = ?";
+
+        try (Connection con = dbConnection.getInstancia().getConexion();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setInt(1, empleadoId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    lista.add(new String[]{
+                        String.valueOf(rs.getInt("id")),
+                        String.valueOf(rs.getInt("prestamo_id")),
+                        rs.getString("cliente"),
+                        String.valueOf(rs.getDouble("monto")),
+                        rs.getString("metodo_pago"),
+                        rs.getString("numero_referencia"),
+                        String.valueOf(rs.getDate("fecha_reporte"))
+                    });
+                }
+            }
+        }
+
+        return lista;
+    }
+
+    public List<String[]> listarPagosProcesados() throws SQLException {
+        List<String[]> lista = new ArrayList<>();
+
+        String sql = "SELECT pa.id, pa.prestamo_id, pa.monto, pa.estado, pa.fecha_aplicacion, per.nombre AS revisor "
+                + "FROM pagos pa "
+                + "LEFT JOIN empleados e ON pa.empleado_revisor_id = e.id "
+                + "LEFT JOIN personas per ON e.persona_id = per.id "
+                + "WHERE pa.estado != 'EN_REVISION'";
+
+        try (Connection con = dbConnection.getInstancia().getConexion();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                lista.add(new String[]{
+                    String.valueOf(rs.getInt("id")),
+                    String.valueOf(rs.getInt("prestamo_id")),
+                    String.valueOf(rs.getDouble("monto")),
+                    rs.getString("estado"),
+                    rs.getString("revisor")
+                });
+            }
+        }
+
         return lista;
     }
 }
+

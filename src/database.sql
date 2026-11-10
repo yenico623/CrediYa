@@ -105,8 +105,28 @@ INSERT INTO personas (usuario_id, nombre, documento, correo, telefono, fecha_nac
 VALUES (LAST_INSERT_ID(), 'Andres Lopez', '91223344', 'andres@gmail.com', '3205556677', '1988-12-04');
 INSERT INTO clientes (persona_id) VALUES (LAST_INSERT_ID());
 
+UPDATE prestamos SET empleado_id = 1 WHERE id = 2;
+SELECT id FROM empleados WHERE persona_id IN (SELECT id FROM personas WHERE correo LIKE '%carlos%');
+UPDATE prestamos SET empleado_id = 1  WHERE id = 2;
+
 INSERT INTO prestamos (cliente_id, empleado_id, monto, saldo_capital, interes, cuotas, fecha_solicitud, estado) 
 VALUES (1, 1, 3000000.00, 3000000.00, 1.50, 12, CURDATE(), 'SOLICITADO');
 
 INSERT INTO prestamos (cliente_id, empleado_id, monto, saldo_capital, interes, cuotas, fecha_solicitud, fecha_aprobacion, proxima_fecha_pago, estado) 
 VALUES (2, 1, 5000000.00, 4800000.00, 2.00, 24, '2026-01-10', '2026-01-15', DATE_SUB(CURDATE(), INTERVAL 40 DAY), 'ACTIVO');
+
+INSERT INTO cuotas_plan (prestamo_id, numero_cuota, fecha_vencimiento, capital_esperado, interes_esperado, capital_pendiente, interes_pendiente, estado) 
+VALUES 
+(2, 1, '2026-02-15', 200000.00, 50000.00, 0.00, 0.00, 'PAGADA'),
+(2, 2, '2026-03-15', 200000.00, 50000.00, 0.00, 0.00, 'PAGADA'),
+(2, 3, '2026-04-15', 200000.00, 50000.00, 200000.00, 50000.00, 'PENDIENTE');
+
+INSERT INTO pagos (prestamo_id, metodo_pago, numero_referencia, fecha_reporte, fecha_aplicacion, monto, estado, empleado_revisor_id) 
+VALUES 
+(2, 'TRANSFERENCIA', 'REF-2026-001', '2026-02-14', '2026-02-14 10:30:00', 250000.00, 'APROBADO', 1),
+(2, 'EFECTIVO', 'REF-2026-002', '2026-03-16', '2026-03-16 14:15:00', 250000.00, 'APROBADO', 1);
+
+SELECT id, prestamo_id, metodo_pago, numero_referencia,
+       monto, estado, fecha_reporte, fecha_aplicacion
+FROM pagos
+ORDER BY id DESC;

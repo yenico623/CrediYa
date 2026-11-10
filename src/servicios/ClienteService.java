@@ -1,62 +1,69 @@
 package servicios;
 
+import dao.CuotaPlanDao;
+import dao.PagoDao;
+import dao.PrestamoDao;
+import estrategias.EstrategiaInteres;
+import estrategias.InteresCompuesto;
+import estrategias.InteresSimple;
+import java.math.BigDecimal;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import modelos.CuotaPlan;
 import modelos.Prestamo;
+import utilidades.dbConnection;
 
 public class ClienteService {
 
-    
-public Prestamo simularNuevoPrestamo(int clienteId, double monto, int cuotas) {
-    if (monto <= 0 || cuotas <= 0) {
-        throw new IllegalArgumentException("El monto y las cuotas deben ser mayores que cero.");
+    private final PrestamoDao prestamoDao;
+    private final PagoDao pagoDao;
+    private final CuotaPlanDao cuotaPlanDao;
+
+    public ClienteService() {
+        this.prestamoDao = new PrestamoDao();
+        this.pagoDao = new PagoDao();
+        this.cuotaPlanDao = new CuotaPlanDao();
     }
 
-    estrategias.EstrategiaInteres estrategia;
-
-    if (cuotas <= 6) {
-        estrategia = new estrategias.InteresSimple();
-    } else {
-        estrategia = new estrategias.InteresCompuesto();
+    private EstrategiaInteres seleccionarEstrategia(int cuotas) {
+        if (cuotas <= 6) {
+            return new InteresSimple();
+        }
+        return new InteresCompuesto();
     }
 
-    double interes = estrategia.calcularInteres(monto, cuotas);
+    public Prestamo simularNuevoPrestamo(int clienteId, double monto, int cuotas) {
+        if (monto <= 0 || cuotas <= 0) {
+            throw new IllegalArgumentException("El monto y las cuotas deben ser mayores que cero.");
+        }
 
-    Prestamo prestamoSimulado = new Prestamo();
-    prestamoSimulado.setMonto(monto);
-    prestamoSimulado.setSaldoCapital(monto);
-    prestamoSimulado.setInteres(interes);
-    prestamoSimulado.setCuotas(cuotas);
+        EstrategiaInteres estrategia = seleccionarEstrategia(cuotas);
 
-    SimuladorCredito simulador = new SimuladorCredito();
-    List<CuotaPlan> plan = simulador.GenerarPlanDePagos(prestamoSimulado);
+        double interes = estrategia.calcularInteres(monto, cuotas);
 
-    if (!plan.isEmpty()) {
-        double valorCuotaTotal = plan.get(0).getCapitalEsperado()
-                + plan.get(0).getInteresEsperado();
+        Prestamo prestamoSimulado = new Prestamo();
+        prestamoSimulado.setMonto(monto);
+        prestamoSimulado.setSaldoCapital(monto);
+        prestamoSimulado.setInteres(interes);
+        prestamoSimulado.setCuotas(cuotas);
 
-        prestamoSimulado.setSaldoCapital(valorCuotaTotal);
+        SimuladorCredito simulador = new SimuladorCredito();
+        List<CuotaPlan> plan = simulador.GenerarPlanDePagos(prestamoSimulado);
+
+        if (!plan.isEmpty()) {
+            double valorCuotaTotal = plan.get(0).getCapitalEsperado()
+                    + plan.get(0).getInteresEsperado();
+
+            prestamoSimulado.setSaldoCapital(valorCuotaTotal);
+        }
+
+        return prestamoSimulado;
     }
-
-    return prestamoSimulado;
-}
-
 
     public boolean confirmarSolicitudPrestamo(int clienteId, double monto, int cuotas, double interes) {
-        String sql = "INSERT INTO prestamos (cliente_id, empleado_id, monto, saldo_capital, interes, cuotas, fecha_solicitud, estado) VALUES (?, NULL, ?, ?, ?, ?, CURDATE(), 'SOLICITADO')";
-
-        try (Connection con = utilidades.dbConnection.getInstancia().getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setInt(1, clienteId);
-            ps.setDouble(2, monto);
-            ps.setDouble(3, monto);
-            ps.setDouble(4, interes);
-            ps.setInt(5, cuotas);
-            ps.executeUpdate();
+        try {
+            prestamoDao.insertarSolicitud(clienteId, monto, cuotas, interes);
             return true;
         } catch (SQLException e) {
             System.out.println("Error SQL al confirmar solicitud: " + e.getMessage());
@@ -65,67 +72,87 @@ public Prestamo simularNuevoPrestamo(int clienteId, double monto, int cuotas) {
         }
     }
 
-
-public boolean registrarPagoPendiente(int prestamoId, double montoAbono, String metodo, String referencia) {
-    String sqlPrestamo = "SELECT id FROM prestamos WHERE id = ? AND estado IN ('ACTIVO', 'EN_MORA') FOR UPDATE";
-    String sqlPagoPendiente = "SELECT id FROM pagos WHERE prestamo_id = ? AND estado = 'EN_REVISION' LIMIT 1";
-    String sqlInsertPago = "INSERT INTO pagos (prestamo_id, metodo_pago, numero_referencia, fecha_reporte, fecha_aplicacion, monto, estado, empleado_revisor_id) VALUES (?, ?, ?, CURDATE(), NULL, ?, 'EN_REVISION', NULL)";
-
-    if (montoAbono <= 0 || metodo == null || referencia == null || referencia.trim().isEmpty()) {
-        return false;
-    }
-
-    if (!metodo.trim().equalsIgnoreCase("TRANSFERENCIA")
-            && !metodo.trim().equalsIgnoreCase("TARJETA")) {
-        return false;
-    }
-
-    try (Connection con = utilidades.dbConnection.getInstancia().getConexion()) {
-        con.setAutoCommit(false);
-
-        try {
-            try (PreparedStatement psPrestamo = con.prepareStatement(sqlPrestamo)) {
-                psPrestamo.setInt(1, prestamoId);
-
-                try (ResultSet rs = psPrestamo.executeQuery()) {
-                    if (!rs.next()) {
-                        con.rollback();
-                        return false;
-                    }
-                }
-            }
-
-            try (PreparedStatement psPendiente = con.prepareStatement(sqlPagoPendiente)) {
-                psPendiente.setInt(1, prestamoId);
-
-                try (ResultSet rs = psPendiente.executeQuery()) {
-                    if (rs.next()) {
-                        con.rollback();
-                        return false;
-                    }
-                }
-            }
-
-            try (PreparedStatement psIns = con.prepareStatement(sqlInsertPago)) {
-                psIns.setInt(1, prestamoId);
-                psIns.setString(2, metodo.trim().toUpperCase());
-                psIns.setString(3, referencia.trim());
-                psIns.setDouble(4, montoAbono);
-                psIns.executeUpdate();
-            }
-
-            con.commit();
-            return true;
-
-        } catch (SQLException e) {
-            con.rollback();
-            throw e;
+    public boolean registrarPagoPendiente(int prestamoId, double montoAbono, String metodo, String referencia) {
+        if (montoAbono <= 0 || metodo == null || referencia == null || referencia.trim().isEmpty()) {
+            return false;
         }
 
-    } catch (SQLException e) {
-        System.out.println("Error SQL al registrar pago pendiente: " + e.getMessage());
-        return false;
-    }
-}
+        if (!metodo.trim().equalsIgnoreCase("TRANSFERENCIA")
+                && !metodo.trim().equalsIgnoreCase("TARJETA")) {
+            return false;
+        }
 
+        try (Connection con = dbConnection.getInstancia().getConexion()) {
+            con.setAutoCommit(false);
+
+            try {
+                if (!prestamoDao.bloquearActivo(con, prestamoId)) {
+                    con.rollback();
+                    return false;
+                }
+
+                if (pagoDao.existePagoEnRevision(con, prestamoId)) {
+                    con.rollback();
+                    return false;
+                }
+
+                pagoDao.insertarPagoEnRevision(con, prestamoId, metodo.trim().toUpperCase(), referencia.trim(), montoAbono);
+
+                con.commit();
+                return true;
+
+            } catch (SQLException e) {
+                con.rollback();
+                throw e;
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Error SQL al registrar pago pendiente: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public List<String[]> listarMisCreditos(int clienteId) throws SQLException {
+        return prestamoDao.listarPorCliente(clienteId);
+    }
+
+    public List<String[]> listarPrestamosParaPago(int clienteId) throws SQLException {
+        return prestamoDao.listarActivosPorCliente(clienteId);
+    }
+
+    public boolean prestamoActivoDelCliente(int prestamoId, int clienteId) throws SQLException {
+        return prestamoDao.existeActivoDelCliente(prestamoId, clienteId);
+    }
+
+    public boolean tienePagoEnRevision(int prestamoId) throws SQLException {
+        return pagoDao.existePagoEnRevision(prestamoId);
+    }
+
+    public int contarCuotasPendientes(int prestamoId) throws SQLException {
+        return cuotaPlanDao.contarPendientes(prestamoId);
+    }
+
+    public List<CuotaPlan> consultarCuotasAPagar(int prestamoId, int cantidad) throws SQLException {
+        return cuotaPlanDao.listarPrimerasPendientes(prestamoId, cantidad);
+    }
+
+    public BigDecimal calcularValorCuota(CuotaPlan cuota) {
+        return BigDecimal.valueOf(cuota.getCapitalPendiente())
+                .add(BigDecimal.valueOf(cuota.getInteresPendiente()))
+                .add(BigDecimal.valueOf(cuota.getMoraAcumulada()));
+    }
+
+    public BigDecimal calcularTotalAPagar(List<CuotaPlan> cuotas) {
+        BigDecimal total = BigDecimal.ZERO;
+
+        for (CuotaPlan cuota : cuotas) {
+            total = total.add(calcularValorCuota(cuota));
+        }
+
+        return total;
+    }
+
+    public List<String[]> listarHistorialPagos(int clienteId) throws SQLException {
+        return pagoDao.listarHistorialPorCliente(clienteId);
+    }
 }

@@ -1,293 +1,340 @@
 package vistas;
 
+import java.sql.SQLException;
+import java.time.LocalDate;
+import java.util.List;
+import modelos.Cliente;
+import modelos.Empleado;
 import modelos.Usuario;
+import servicios.AdminService;
 import utilidades.ConsolaUtil;
 import utilidades.MotorVisual;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 
 public class MenuAdmin {
 
-public void iniciar(Usuario adminEnSesion) {
-    boolean volver = false;
+    private final AdminService adminService;
+    private final MenuSolicitudes menuSolicitudes;
+    private final MenuReportes menuReportes;
 
-    while (!volver) {
-        String[] opciones = {
-            "Gestion de empleados",
-            "Gestion de clientes",
-            "Solicitudes de credito",
-            "Reportes"
-        };
+    public MenuAdmin() {
+        this.adminService = new AdminService();
+        this.menuSolicitudes = new MenuSolicitudes();
+        this.menuReportes = new MenuReportes();
+    }
 
-        MotorVisual.dibujarMenu("PANEL DE ADMINISTRACION", opciones, "Cerrar sesion");
-        int opcion = ConsolaUtil.leerEntero("   > Seleccione una opcion: ");
+    public void iniciar(Usuario adminEnSesion) {
+        boolean volver = false;
 
-        switch (opcion) {
-            case 1 -> menuEmpleados();
-            case 2 -> menuClientes();
-            case 3 -> menuSolicitudes();
-            case 4 -> menuReportes();
-            case 5 -> volver = true;
-            default -> {
-                System.out.println("  [!] ERROR: Ingrese una opcion valida.");
-                ConsolaUtil.pausar();
+        while (!volver) {
+            String[] opciones = {
+                "Gestion de empleados",
+                "Gestion de clientes",
+                "Solicitudes de credito",
+                "Reportes"
+            };
+
+            MotorVisual.dibujarMenu("PANEL DE ADMINISTRACION", opciones, "Cerrar sesion");
+            int opcion = ConsolaUtil.leerEntero("   > Seleccione una opcion: ");
+
+            switch (opcion) {
+                case 1 -> menuEmpleados();
+                case 2 -> menuClientes();
+                case 3 -> menuSolicitudes.iniciar();
+                case 4 -> menuReportes.iniciar();
+                case 5 -> volver = true;
+                default -> {
+                    System.out.println("  [!] ERROR: Ingrese una opcion valida.");
+                    ConsolaUtil.pausar();
+                }
             }
         }
     }
-}
 
-private void menuEmpleados() {
-    String[] opciones = {
-        "Crear empleado",
-        "Listar empleados",
-        "Consultar empleado",
-        "Actualizar empleado"
-    };
+    private void menuEmpleados() {
+        boolean volver = false;
 
-    MotorVisual.dibujarMenu("GESTION DE EMPLEADOS", opciones, "Volver");
-    int opcion = ConsolaUtil.leerEntero("   > Seleccione una opcion: ");
+        while (!volver) {
+            String[] opciones = {
+                "Crear empleado",
+                "Listar empleados",
+                "Consultar empleado",
+                "Actualizar empleado"
+            };
 
-    switch (opcion) {
-        case 1, 2, 3, 4 -> {
-            System.out.println("  [i] Esta funcionalidad se implementara en el siguiente paso.");
-            ConsolaUtil.pausar();
-        }
-        case 5 -> {
-        }
-        default -> {
-            System.out.println("  [!] ERROR: Ingrese una opcion valida.");
-            ConsolaUtil.pausar();
-        }
-    }
-}
+            MotorVisual.dibujarMenu("GESTION DE EMPLEADOS", opciones, "Volver");
+            int opcion = ConsolaUtil.leerEntero("   > Seleccione una opcion: ");
 
-private void menuClientes() {
-    String[] opciones = {
-        "Crear cliente",
-        "Listar clientes",
-        "Consultar cliente",
-        "Actualizar cliente"
-    };
-
-    MotorVisual.dibujarMenu("GESTION DE CLIENTES", opciones, "Volver");
-    int opcion = ConsolaUtil.leerEntero("   > Seleccione una opcion: ");
-
-    switch (opcion) {
-        case 1, 2, 3, 4 -> {
-            System.out.println("  [i] Esta funcionalidad se implementara en el siguiente paso.");
-            ConsolaUtil.pausar();
-        }
-        case 5 -> {
-        }
-        default -> {
-            System.out.println("  [!] ERROR: Ingrese una opcion valida.");
-            ConsolaUtil.pausar();
-        }
-    }
-}
-
-private void menuSolicitudes() {
-    String[] opciones = {
-        "Listar solicitudes",
-        "Consultar solicitud",
-        "Aprobar solicitud",
-        "Rechazar solicitud",
-        "Asignar empleado"
-    };
-
-    MotorVisual.dibujarMenu("GESTION DE SOLICITUDES DE CREDITO", opciones, "Volver");
-    int opcion = ConsolaUtil.leerEntero("   > Seleccione una opcion: ");
-
-    switch (opcion) {
-        case 1, 2, 3, 4, 5 -> {
-            System.out.println("  [i] Esta funcionalidad se implementara posteriormente.");
-            ConsolaUtil.pausar();
-        }
-        case 6 -> {
-        }
-        default -> {
-            System.out.println("  [!] ERROR: Ingrese una opcion valida.");
-            ConsolaUtil.pausar();
-        }
-    }
-}
-
-private void menuReportes() {
-    boolean volver = false;
-
-    while (!volver) {
-        String[] opciones = {
-            "Reporte general de clientes",
-            "Reporte general de empleados",
-            "Reporte general de prestamos",
-            "Reporte de clientes morosos",
-            "Reportes con Stream API",
-            "Reporte serializable"
-        };
-
-        MotorVisual.dibujarMenu("REPORTES", opciones, "Volver");
-        int opcion = ConsolaUtil.leerEntero("   > Seleccione una opcion: ");
-
-        switch (opcion) {
-            case 1 -> reporteClientes();
-            case 2 -> reporteEmpleados();
-            case 3 -> reportePrestamos();
-            case 4 -> reporteMorosos();
-            case 5, 6 -> {
-                System.out.println("  [i] Esta funcionalidad se implementara posteriormente.");
-                ConsolaUtil.pausar();
-            }
-            case 7 -> volver = true;
-            default -> {
-                System.out.println("  [!] ERROR: Ingrese una opcion valida.");
-                ConsolaUtil.pausar();
+            switch (opcion) {
+                case 1 -> crearEmpleado();
+                case 2 -> listarEmpleados();
+                case 3 -> consultarEmpleado();
+                case 4 -> actualizarEmpleado();
+                case 5 -> volver = true;
+                default -> {
+                    System.out.println("  [!] ERROR: Ingrese una opcion valida.");
+                    ConsolaUtil.pausar();
+                }
             }
         }
     }
-}
 
+    private void menuClientes() {
+        boolean volver = false;
 
-    private void reporteClientes() {
+        while (!volver) {
+            String[] opciones = {
+                "Crear cliente",
+                "Listar clientes",
+                "Consultar cliente",
+                "Actualizar cliente"
+            };
+
+            MotorVisual.dibujarMenu("GESTION DE CLIENTES", opciones, "Volver");
+            int opcion = ConsolaUtil.leerEntero("   > Seleccione una opcion: ");
+
+            switch (opcion) {
+                case 1 -> crearCliente();
+                case 2 -> listarClientes();
+                case 3 -> consultarCliente();
+                case 4 -> actualizarCliente();
+                case 5 -> volver = true;
+                default -> {
+                    System.out.println("  [!] ERROR: Ingrese una opcion valida.");
+                    ConsolaUtil.pausar();
+                }
+            }
+        }
+    }
+
+    private void crearEmpleado() {
         System.out.println("\n  ===================================================");
-        System.out.println("               REPORTE GENERAL DE CLIENTES           ");
+        System.out.println("                    CREAR EMPLEADO                   ");
         System.out.println("  ===================================================");
 
-        String sql = "SELECT c.id, p.nombre, p.documento, p.correo, p.telefono FROM clientes c INNER JOIN personas p ON c.persona_id = p.id";
+        String nombre = ConsolaUtil.leerTexto("    > Nombre completo: ");
+        String documento = ConsolaUtil.leerTexto("    > Documento: ");
+        String correo = ConsolaUtil.leerTexto("    > Correo: ");
+        String telefono = ConsolaUtil.leerTexto("    > Telefono: ");
+        LocalDate fechaNacimiento = ConsolaUtil.leerFecha("    > Fecha de nacimiento (AAAA-MM-DD): ");
+        double salario = ConsolaUtil.leerDecimal("    > Salario ($): ");
+        String username = ConsolaUtil.leerTexto("    > Usuario de acceso: ");
+        String password = ConsolaUtil.leerTexto("    > Contrasena de acceso: ");
 
-        try (Connection con = utilidades.dbConnection.getInstancia().getConexion();
-             PreparedStatement ps = con.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+        Empleado empleado = new Empleado(0, 0, null, nombre, documento, correo, telefono, fechaNacimiento, salario);
 
-            System.out.println("  ID\t|\tDOCUMENTO\t|\tNOMBRE\t\t|\tTELEFONO");
-            System.out.println("  -------------------------------------------------------------------");
-            while (rs.next()) {
-                System.out.println("  " + rs.getInt("id") + "\t|\t" + rs.getString("documento") + "\t|\t" + rs.getString("nombre") + "\t|\t" + rs.getString("telefono"));
-            }
-            System.out.println("  ===================================================================");
-
-        } catch (SQLException e) {
-            System.out.println("  [X] Error al generar reporte: " + e.getMessage());
+        if (adminService.crearEmpleado(empleado, username, password)) {
+            System.out.println("  [OK] Empleado creado correctamente.");
+        } else {
+            System.out.println("  [X] No fue posible crear el empleado. Verifique que el salario sea mayor a cero y que el documento, correo y usuario no esten registrados.");
         }
 
         ConsolaUtil.pausar();
     }
 
-    private void reporteEmpleados() {
+    private void listarEmpleados() {
+        System.out.println("\n  ===================================================================================");
+        System.out.println("                                  LISTADO DE EMPLEADOS                             ");
+        System.out.println("  ===================================================================================");
+
+        try {
+            List<Empleado> empleados = adminService.listarEmpleados();
+
+            System.out.printf(" %-6s | %-12s | %-22s | %-26s | %-12s | %-12s\n",
+                    "ID", "DOCUMENTO", "NOMBRE", "CORREO", "TELEFONO", "SALARIO");
+            System.out.println("  -----------------------------------------------------------------------------------");
+
+            for (Empleado empleado : empleados) {
+                System.out.printf(" %-6d | %-12s | %-22s | %-26s | %-12s | %-12s\n",
+                        empleado.getIdEmpleado(),
+                        empleado.getDocumento(),
+                        empleado.getNombre(),
+                        empleado.getCorreo(),
+                        empleado.getTelefono(),
+                        ConsolaUtil.formatearMoneda(empleado.getSalario()));
+            }
+
+            System.out.println("  ===================================================================================");
+
+            if (empleados.isEmpty()) {
+                System.out.println("  [i] No hay empleados registrados.");
+            }
+        } catch (SQLException e) {
+            System.out.println("  [X] Error al listar empleados: " + e.getMessage());
+        }
+
+        ConsolaUtil.pausar();
+    }
+
+    private void consultarEmpleado() {
+        String documento = ConsolaUtil.leerTexto("    > Documento del empleado: ");
+
+        try {
+            Empleado empleado = adminService.consultarEmpleado(documento);
+
+            if (empleado == null) {
+                System.out.println("  [X] No existe un empleado con ese documento.");
+            } else {
+                imprimirEmpleado(empleado);
+            }
+        } catch (SQLException e) {
+            System.out.println("  [X] Error al consultar el empleado: " + e.getMessage());
+        }
+
+        ConsolaUtil.pausar();
+    }
+
+    private void actualizarEmpleado() {
+        String documento = ConsolaUtil.leerTexto("    > Documento del empleado a actualizar: ");
+
+        try {
+            Empleado empleado = adminService.consultarEmpleado(documento);
+
+            if (empleado == null) {
+                System.out.println("  [X] No existe un empleado con ese documento.");
+                ConsolaUtil.pausar();
+                return;
+            }
+
+            imprimirEmpleado(empleado);
+
+            String correo = ConsolaUtil.leerTexto("    > Nuevo correo: ");
+            String telefono = ConsolaUtil.leerTexto("    > Nuevo telefono: ");
+            double salario = ConsolaUtil.leerDecimal("    > Nuevo salario ($): ");
+
+            if (adminService.actualizarEmpleado(documento, correo, telefono, salario)) {
+                System.out.println("  [OK] Empleado actualizado correctamente.");
+            } else {
+                System.out.println("  [X] No fue posible actualizar el empleado. El salario debe ser mayor a cero.");
+            }
+        } catch (SQLException e) {
+            System.out.println("  [X] Error al actualizar el empleado: " + e.getMessage());
+        }
+
+        ConsolaUtil.pausar();
+    }
+
+    private void imprimirEmpleado(Empleado empleado) {
+        System.out.println("\n  ---------------------------------------------------");
+        System.out.println("    ID Empleado      : " + empleado.getIdEmpleado());
+        System.out.println("    Nombre           : " + empleado.getNombre());
+        System.out.println("    Documento        : " + empleado.getDocumento());
+        System.out.println("    Correo           : " + empleado.getCorreo());
+        System.out.println("    Telefono         : " + empleado.getTelefono());
+        System.out.println("    Fecha nacimiento : " + empleado.getFechaNacimiento());
+        System.out.println("    Salario          : " + ConsolaUtil.formatearMoneda(empleado.getSalario()));
+        System.out.println("  ---------------------------------------------------");
+    }
+
+    private void crearCliente() {
         System.out.println("\n  ===================================================");
-        System.out.println("              REPORTE GENERAL DE EMPLEADOS           ");
+        System.out.println("                    CREAR CLIENTE                    ");
         System.out.println("  ===================================================");
 
-        String sql = "SELECT e.id, p.nombre, p.documento, e.salario FROM empleados e INNER JOIN personas p ON e.persona_id = p.id";
+        String nombre = ConsolaUtil.leerTexto("    > Nombre completo: ");
+        String documento = ConsolaUtil.leerTexto("    > Documento: ");
+        String correo = ConsolaUtil.leerTexto("    > Correo: ");
+        String telefono = ConsolaUtil.leerTexto("    > Telefono: ");
+        LocalDate fechaNacimiento = ConsolaUtil.leerFecha("    > Fecha de nacimiento (AAAA-MM-DD): ");
 
-        try (Connection con = utilidades.dbConnection.getInstancia().getConexion();
-             PreparedStatement ps = con.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+        Cliente cliente = new Cliente(0, null, nombre, documento, correo, telefono, fechaNacimiento);
 
-            System.out.println("  ID\t|\tDOCUMENTO\t|\tNOMBRE\t\t|\tSALARIO");
-            System.out.println("  -------------------------------------------------------------------");
-            while (rs.next()) {
-                System.out.println("  " + rs.getInt("id") + "\t|\t" + rs.getString("documento") + "\t|\t" + rs.getString("nombre") + "\t|\t$" + rs.getDouble("salario"));
-            }
-            System.out.println("  ===================================================================");
-
-        } catch (SQLException e) {
-            System.out.println("  [X] Error al generar reporte: " + e.getMessage());
+        if (adminService.crearCliente(cliente)) {
+            System.out.println("  [OK] Cliente creado correctamente. Su acceso es el numero de documento.");
+        } else {
+            System.out.println("  [X] No fue posible crear el cliente. Verifique que el documento y el correo no esten registrados.");
         }
 
         ConsolaUtil.pausar();
     }
 
-    private void reportePrestamos() {
-        System.out.println("\n=========================================================================");
-        System.out.println("                      REPORTE GENERAL DE PRESTAMOS                       ");
-        System.out.println("=========================================================================");
+    private void listarClientes() {
+        System.out.println("\n  =====================================================================================");
+        System.out.println("                                   LISTADO DE CLIENTES                               ");
+        System.out.println("  =====================================================================================");
 
-        String sql = "SELECT p.id, per.nombre as cliente, p.monto, p.saldo_capital, p.cuotas, p.estado FROM prestamos p INNER JOIN clientes c ON p.cliente_id = c.id INNER JOIN personas per ON c.persona_id = per.id";
+        try {
+            List<Cliente> clientes = adminService.listarClientes();
 
-        try (Connection con = utilidades.dbConnection.getInstancia().getConexion();
-             PreparedStatement ps = con.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+            System.out.printf(" %-6s | %-12s | %-22s | %-26s | %-12s\n",
+                    "ID", "DOCUMENTO", "NOMBRE", "CORREO", "TELEFONO");
+            System.out.println("  -------------------------------------------------------------------------------------");
 
-            System.out.printf(" %-6s | %-20s | %-12s | %-12s | %-10s\n", "ID", "CLIENTE", "MONTO", "SALDO", "ESTADO");
-            System.out.println("-------------------------------------------------------------------------");
-            
-            boolean hayPrestamos = false;
-            while (rs.next()) {
-                hayPrestamos = true;
-                double montoDbl = rs.getDouble("monto");
-                double saldoDbl = rs.getDouble("saldo_capital");
-                
-                String montoFmt = "$" + String.format("%,.0f", montoDbl).replace(",", ".");
-                String saldoFmt = "$" + String.format("%,.0f", saldoDbl).replace(",", ".");
-                
-                System.out.printf(" %-6d | %-20s | %-12s | %-12s | %-10s\n", 
-                                  rs.getInt("id"), 
-                                  rs.getString("cliente"), 
-                                  montoFmt, 
-                                  saldoFmt, 
-                                  rs.getString("estado"));
-            }
-            
-            System.out.println("=========================================================================");
-
-            if (!hayPrestamos) {
-                System.out.println("  [i] No hay prestamos registrados en el sistema.");
+            for (Cliente cliente : clientes) {
+                System.out.printf(" %-6d | %-12s | %-22s | %-26s | %-12s\n",
+                        cliente.getId(),
+                        cliente.getDocumento(),
+                        cliente.getNombre(),
+                        cliente.getCorreo(),
+                        cliente.getTelefono());
             }
 
+            System.out.println("  =====================================================================================");
+
+            if (clientes.isEmpty()) {
+                System.out.println("  [i] No hay clientes registrados.");
+            }
         } catch (SQLException e) {
-            System.out.println("  [X] Error al generar reporte de prestamos: " + e.getMessage());
+            System.out.println("  [X] Error al listar clientes: " + e.getMessage());
         }
 
         ConsolaUtil.pausar();
     }
-    private void reporteMorosos() {
-        System.out.println("\n=========================================================================");
-        System.out.println("             REPORTE DE CLIENTES MOROSOS (INACTIVIDAD)                   ");
-        System.out.println("=========================================================================");
 
-        String sql = "SELECT p.id as prestamo_id, per.nombre as cliente_nombre, per.telefono, "
-                   + "MAX(pa.fecha_reporte) as ultimo_pago, "
-                   + "DATEDIFF(CURDATE(), MAX(pa.fecha_reporte)) as dias_sin_pagar "
-                   + "FROM prestamos p "
-                   + "INNER JOIN clientes c ON p.cliente_id = c.id "
-                   + "INNER JOIN personas per ON c.persona_id = per.id "
-                   + "LEFT JOIN pagos pa ON p.id = pa.prestamo_id "
-                   + "GROUP BY p.id, per.nombre, per.telefono "
-                   + "HAVING dias_sin_pagar > 30 OR ultimo_pago IS NULL";
+    private void consultarCliente() {
+        String documento = ConsolaUtil.leerTexto("    > Documento del cliente: ");
 
-        try (Connection con = utilidades.dbConnection.getInstancia().getConexion();
-             PreparedStatement ps = con.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+        try {
+            Cliente cliente = adminService.consultarCliente(documento);
 
-            System.out.printf(" %-10s | %-20s | %-12s | %-15s | %-10s\n", "PRESTAMO", "CLIENTE", "TELEFONO", "ULTIMO PAGO", "DIAS SIN PAGO");
-            System.out.println("----------------------------------------------------------------------------------");
-            
-            boolean hayMorosos = false;
-            while (rs.next()) {
-                hayMorosos = true;
-                String ultimoPago = rs.getDate("ultimo_pago") != null ? rs.getDate("ultimo_pago").toString() : "SIN PAGOS";
-                String dias = rs.getDate("ultimo_pago") != null ? rs.getInt("dias_sin_pagar") + " dias" : "N/A (Inactivo)";
-
-                System.out.printf(" %-10d | %-20s | %-12s | %-15s | %-10s\n", 
-                                  rs.getInt("prestamo_id"), 
-                                  rs.getString("cliente_nombre"), 
-                                  rs.getString("telefono"), 
-                                  ultimoPago, 
-                                  dias);
+            if (cliente == null) {
+                System.out.println("  [X] No existe un cliente con ese documento.");
+            } else {
+                imprimirCliente(cliente);
             }
-            
-            System.out.println("==================================================================================");
-
-            if (!hayMorosos) {
-                System.out.println("  [i] No se registran clientes en mora por inactividad.");
-            }
-
         } catch (SQLException e) {
-            System.out.println("  [X] Error al generar reporte de morosos: " + e.getMessage());
+            System.out.println("  [X] Error al consultar el cliente: " + e.getMessage());
         }
 
         ConsolaUtil.pausar();
+    }
+
+    private void actualizarCliente() {
+        String documento = ConsolaUtil.leerTexto("    > Documento del cliente a actualizar: ");
+
+        try {
+            Cliente cliente = adminService.consultarCliente(documento);
+
+            if (cliente == null) {
+                System.out.println("  [X] No existe un cliente con ese documento.");
+                ConsolaUtil.pausar();
+                return;
+            }
+
+            imprimirCliente(cliente);
+
+            String correo = ConsolaUtil.leerTexto("    > Nuevo correo: ");
+            String telefono = ConsolaUtil.leerTexto("    > Nuevo telefono: ");
+
+            if (adminService.actualizarCliente(documento, correo, telefono)) {
+                System.out.println("  [OK] Cliente actualizado correctamente.");
+            } else {
+                System.out.println("  [X] No fue posible actualizar el cliente.");
+            }
+        } catch (SQLException e) {
+            System.out.println("  [X] Error al actualizar el cliente: " + e.getMessage());
+        }
+
+        ConsolaUtil.pausar();
+    }
+
+    private void imprimirCliente(Cliente cliente) {
+        System.out.println("\n  ---------------------------------------------------");
+        System.out.println("    ID Cliente       : " + cliente.getId());
+        System.out.println("    Nombre           : " + cliente.getNombre());
+        System.out.println("    Documento        : " + cliente.getDocumento());
+        System.out.println("    Correo           : " + cliente.getCorreo());
+        System.out.println("    Telefono         : " + cliente.getTelefono());
+        System.out.println("    Fecha nacimiento : " + cliente.getFechaNacimiento());
+        System.out.println("  ---------------------------------------------------");
     }
 }

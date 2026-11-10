@@ -1,22 +1,23 @@
-
 package vistas;
 
 import servicios.ClienteService;
+import servicios.EmpleadoService;
 import modelos.Cliente;
+import modelos.CuotaPlan;
 import modelos.Empleado;
 import modelos.Prestamo;
 import utilidades.ConsolaUtil;
 import utilidades.MotorVisual;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 
 public class MenuPrestamo {
     private final ClienteService clienteService;
+    private final EmpleadoService empleadoService;
 
     public MenuPrestamo() {
         this.clienteService = new ClienteService();
+        this.empleadoService = new EmpleadoService();
     }
 
     public void iniciar(Empleado empleadoEnSesion) {
@@ -72,42 +73,26 @@ public class MenuPrestamo {
         System.out.println("                         PRESTAMOS ASIGNADOS A MI GESTION                ");
         System.out.println("=========================================================================");
 
-        String sql = "SELECT p.id, per.nombre AS cliente, p.monto, p.saldo_capital, p.estado, p.proxima_fecha_pago "
-                + "FROM prestamos p "
-                + "INNER JOIN clientes c ON p.cliente_id = c.id "
-                + "INNER JOIN personas per ON c.persona_id = per.id "
-                + "WHERE p.empleado_id = ?";
+        try {
+            List<String[]> prestamos = empleadoService.listarPrestamosAsignados(empleadoEnSesion.getIdEmpleado());
 
-        try (Connection con = utilidades.dbConnection.getInstancia().getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+            System.out.printf(" %-6s | %-18s | %-12s | %-10s | %-12s\n",
+                    "ID", "CLIENTE", "SALDO", "ESTADO", "PROX. PAGO");
+            System.out.println("-------------------------------------------------------------------------");
 
-            ps.setInt(1, empleadoEnSesion.getIdEmpleado());
+            for (String[] prestamo : prestamos) {
+                System.out.printf(" %-6d | %-18s | $%-11.0f | %-10s | %-12s\n",
+                        Integer.parseInt(prestamo[0]),
+                        prestamo[1],
+                        Double.parseDouble(prestamo[2]),
+                        prestamo[3],
+                        prestamo[4]);
+            }
 
-            try (ResultSet rs = ps.executeQuery()) {
-                boolean hay = false;
+            System.out.println("=========================================================================");
 
-                System.out.printf(" %-6s | %-18s | %-12s | %-10s | %-12s\n",
-                        "ID", "CLIENTE", "SALDO", "ESTADO", "PROX. PAGO");
-                System.out.println("-------------------------------------------------------------------------");
-
-                while (rs.next()) {
-                    hay = true;
-
-                    System.out.printf(" %-6d | %-18s | $%-11.0f | %-10s | %-12s\n",
-                            rs.getInt("id"),
-                            rs.getString("cliente"),
-                            rs.getDouble("saldo_capital"),
-                            rs.getString("estado"),
-                            rs.getDate("proxima_fecha_pago") != null
-                                    ? rs.getDate("proxima_fecha_pago").toString()
-                                    : "N/A");
-                }
-
-                System.out.println("=========================================================================");
-
-                if (!hay) {
-                    System.out.println("  [i] No tiene prestamos asignados actualmente.");
-                }
+            if (prestamos.isEmpty()) {
+                System.out.println("  [i] No tiene prestamos asignados actualmente.");
             }
         } catch (SQLException e) {
             System.out.println("  [X] Error al consultar prestamos asignados: " + e.getMessage());
@@ -123,41 +108,26 @@ public class MenuPrestamo {
 
         int prestamoId = ConsolaUtil.leerEntero("    > Ingrese el ID del prestamo a consultar: ");
 
-        String sql = "SELECT cp.numero_cuota, cp.fecha_vencimiento, cp.capital_esperado, cp.interes_esperado, cp.estado "
-                + "FROM cuotas_plan cp "
-                + "INNER JOIN prestamos p ON cp.prestamo_id = p.id "
-                + "WHERE cp.prestamo_id = ? AND p.empleado_id = ? "
-                + "ORDER BY cp.numero_cuota";
+        try {
+            List<CuotaPlan> plan = empleadoService.consultarPlanDePrestamo(prestamoId, empleadoEnSesion.getIdEmpleado());
 
-        try (Connection con = utilidades.dbConnection.getInstancia().getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+            System.out.printf(" %-8s | %-12s | %-10s | %-10s | %-10s\n",
+                    "CUOTA #", "VENCIMIENTO", "CAPITAL", "INTERES", "ESTADO");
+            System.out.println("-------------------------------------------------------------------------");
 
-            ps.setInt(1, prestamoId);
-            ps.setInt(2, empleadoEnSesion.getIdEmpleado());
+            for (CuotaPlan cuota : plan) {
+                System.out.printf(" %-8d | %-12s | $%-9.0f | $%-9.0f | %-10s\n",
+                        cuota.getNumeroCuota(),
+                        cuota.getFechaVencimiento().toString(),
+                        cuota.getCapitalEsperado(),
+                        cuota.getInteresEsperado(),
+                        cuota.getEstado());
+            }
 
-            try (ResultSet rs = ps.executeQuery()) {
-                boolean hay = false;
+            System.out.println("=========================================================================");
 
-                System.out.printf(" %-8s | %-12s | %-10s | %-10s | %-10s\n",
-                        "CUOTA #", "VENCIMIENTO", "CAPITAL", "INTERES", "ESTADO");
-                System.out.println("-------------------------------------------------------------------------");
-
-                while (rs.next()) {
-                    hay = true;
-
-                    System.out.printf(" %-8d | %-12s | $%-9.0f | $%-9.0f | %-10s\n",
-                            rs.getInt("numero_cuota"),
-                            rs.getDate("fecha_vencimiento").toString(),
-                            rs.getDouble("capital_esperado"),
-                            rs.getDouble("interes_esperado"),
-                            rs.getString("estado"));
-                }
-
-                System.out.println("=========================================================================");
-
-                if (!hay) {
-                    System.out.println("  [i] No se encontro plan de cuotas para este prestamo.");
-                }
+            if (plan.isEmpty()) {
+                System.out.println("  [i] No se encontro plan de cuotas para este prestamo.");
             }
         } catch (SQLException e) {
             System.out.println("  [X] Error al consultar detalle: " + e.getMessage());
@@ -171,39 +141,26 @@ public class MenuPrestamo {
         System.out.println("                           MIS CREDITOS ASOCIADOS                        ");
         System.out.println("=========================================================================");
 
-        String sql = "SELECT id, monto, saldo_capital, interes, cuotas, estado, fecha_solicitud, fecha_aprobacion, proxima_fecha_pago "
-                + "FROM prestamos WHERE cliente_id = ?";
+        try {
+            List<String[]> prestamos = clienteService.listarMisCreditos(clienteEnSesion.getId());
 
-        try (Connection con = utilidades.dbConnection.getInstancia().getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+            System.out.printf(" %-8s | %-12s | %-12s | %-10s | %-12s\n",
+                    "ID", "MONTO", "SALDO", "ESTADO", "PROX. PAGO");
+            System.out.println("-------------------------------------------------------------------------");
 
-            ps.setInt(1, clienteEnSesion.getId());
+            for (String[] prestamo : prestamos) {
+                System.out.printf(" %-8d | $%-11.0f | $%-11.0f | %-10s | %-12s\n",
+                        Integer.parseInt(prestamo[0]),
+                        Double.parseDouble(prestamo[1]),
+                        Double.parseDouble(prestamo[2]),
+                        prestamo[3],
+                        prestamo[4]);
+            }
 
-            try (ResultSet rs = ps.executeQuery()) {
-                boolean hayPrestamos = false;
+            System.out.println("=========================================================================");
 
-                System.out.printf(" %-8s | %-12s | %-12s | %-10s | %-12s\n",
-                        "ID", "MONTO", "SALDO", "ESTADO", "PROX. PAGO");
-                System.out.println("-------------------------------------------------------------------------");
-
-                while (rs.next()) {
-                    hayPrestamos = true;
-
-                    System.out.printf(" %-8d | $%-11.0f | $%-11.0f | %-10s | %-12s\n",
-                            rs.getInt("id"),
-                            rs.getDouble("monto"),
-                            rs.getDouble("saldo_capital"),
-                            rs.getString("estado"),
-                            rs.getDate("proxima_fecha_pago") != null
-                                    ? rs.getDate("proxima_fecha_pago").toString()
-                                    : "N/A");
-                }
-
-                System.out.println("=========================================================================");
-
-                if (!hayPrestamos) {
-                    System.out.println("  [i] No registra creditos en el sistema.");
-                }
+            if (prestamos.isEmpty()) {
+                System.out.println("  [i] No registra creditos en el sistema.");
             }
         } catch (SQLException e) {
             System.out.println("  [X] Error al consultar creditos: " + e.getMessage());

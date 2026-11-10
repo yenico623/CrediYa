@@ -1,5 +1,6 @@
-
 package utilidades;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.Scanner;
 
 public class ConsolaUtil {
@@ -55,10 +56,24 @@ public class ConsolaUtil {
             
             }
         }
+
+        public static LocalDate leerFecha(String mensaje){
+            while(true){
+                try{
+                    System.out.println(mensaje);
+                    return LocalDate.parse(scanner.nextLine().trim());
+                }catch(DateTimeParseException e){
+                    System.out.println("[!] ERROR: Use el formato AAAA-MM-DD.");
+                }
+            }
+        }
+
+        public static String formatearMoneda(double valor){
+            return "$" + String.format("%,.0f", valor).replace(",", ".");
+        }
         
         public static void pausar(){
             System.out.println("\n ---------- Presione ENTER para continua ----------");
             scanner.nextLine();
         }
 }
-

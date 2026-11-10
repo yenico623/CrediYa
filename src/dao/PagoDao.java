@@ -1,6 +1,7 @@
 
 package dao;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -9,6 +10,8 @@ import java.sql.Statement;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import modelos.Pago;
+import modelos.Prestamo;
 import utilidades.dbConnection;
 import utilidades.GestorErrores;
 
@@ -191,5 +194,154 @@ public class PagoDao {
 
         return lista;
     }
+
+    public boolean existePagoEnRevision(Connection con, int prestamoId) throws SQLException {
+        String sql = "SELECT id FROM pagos WHERE prestamo_id = ? AND estado = 'EN_REVISION' LIMIT 1";
+
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, prestamoId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        }
+    }
+
+    public boolean existePagoEnRevision(int prestamoId) throws SQLException {
+        try (Connection con = dbConnection.getInstancia().getConexion()) {
+            return existePagoEnRevision(con, prestamoId);
+        }
+    }
+
+    public void insertarPagoEnRevision(Connection con, int prestamoId, String metodo, String referencia, double monto) throws SQLException {
+        String sql = "INSERT INTO pagos (prestamo_id, metodo_pago, numero_referencia, fecha_reporte, fecha_aplicacion, monto, estado, empleado_revisor_id) "
+                   + "VALUES (?, ?, ?, CURDATE(), NULL, ?, 'EN_REVISION', NULL)";
+
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, prestamoId);
+            ps.setString(2, metodo);
+            ps.setString(3, referencia);
+            ps.setDouble(4, monto);
+            ps.executeUpdate();
+        }
+    }
+
+    public int insertarPagoAprobado(Connection con, int prestamoId, String metodo, String referencia, BigDecimal monto, int empleadoId) throws SQLException {
+        String sql = "INSERT INTO pagos "
+                   + "(prestamo_id, metodo_pago, numero_referencia, fecha_reporte, fecha_aplicacion, monto, estado, empleado_revisor_id) "
+                   + "VALUES (?, ?, ?, CURDATE(), NOW(), ?, 'APROBADO', ?)";
+
+        try (PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setInt(1, prestamoId);
+            ps.setString(2, metodo);
+            ps.setString(3, referencia);
+            ps.setBigDecimal(4, monto);
+            ps.setInt(5, empleadoId);
+            ps.executeUpdate();
+
+            try (ResultSet rs = ps.getGeneratedKeys()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        }
+
+        return 0;
+    }
+
+    public Pago obtenerPagoParaProcesar(Connection con, int pagoId, int empleadoId) throws SQLException {
+        String sql = "SELECT pa.prestamo_id, pa.monto, pa.estado "
+                   + "FROM pagos pa "
+                   + "INNER JOIN prestamos p ON pa.prestamo_id = p.id "
+                   + "WHERE pa.id = ? AND p.empleado_id = ? "
+                   + "FOR UPDATE";
+
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, pagoId);
+            ps.setInt(2, empleadoId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Prestamo prestamo = new Prestamo();
+                    prestamo.setId(rs.getInt("prestamo_id"));
+
+                    Pago pago = new Pago();
+                    pago.setId(pagoId);
+                    pago.setPrestamo(prestamo);
+                    pago.setMonto(rs.getBigDecimal("monto").doubleValue());
+                    pago.setEstado(rs.getString("estado"));
+                    return pago;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    public boolean marcarPagoRechazado(Connection con, int pagoId, int empleadoId) throws SQLException {
+        String sql = "UPDATE pagos SET estado = 'ERROR', empleado_revisor_id = ? "
+                   + "WHERE id = ? AND estado = 'EN_REVISION'";
+
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, empleadoId);
+            ps.setInt(2, pagoId);
+            return ps.executeUpdate() == 1;
+        }
+    }
+
+    public boolean marcarPagoAprobado(Connection con, int pagoId, int empleadoId) throws SQLException {
+        String sql = "UPDATE pagos SET estado = 'APROBADO', empleado_revisor_id = ?, fecha_aplicacion = NOW() "
+                   + "WHERE id = ? AND estado = 'EN_REVISION'";
+
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, empleadoId);
+            ps.setInt(2, pagoId);
+            return ps.executeUpdate() == 1;
+        }
+    }
+
+    public void insertarDetalleDistribucion(Connection con, int pagoId, int cuotaId, BigDecimal mora, BigDecimal interes, BigDecimal capital) throws SQLException {
+        String sql = "INSERT INTO detalles_distribucion_pago "
+                   + "(pago_id, cuota_id, monto_a_mora, monto_a_interes, monto_a_capital) "
+                   + "VALUES (?, ?, ?, ?, ?)";
+
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, pagoId);
+            ps.setInt(2, cuotaId);
+            ps.setBigDecimal(3, mora);
+            ps.setBigDecimal(4, interes);
+            ps.setBigDecimal(5, capital);
+            ps.executeUpdate();
+        }
+    }
+
+    public List<String[]> listarHistorialPorCliente(int clienteId) throws SQLException {
+        List<String[]> lista = new ArrayList<>();
+        String sql = "SELECT pa.id, pa.prestamo_id, pa.monto, pa.fecha_reporte, pa.estado "
+                   + "FROM pagos pa "
+                   + "INNER JOIN prestamos p ON pa.prestamo_id = p.id "
+                   + "WHERE p.cliente_id = ?";
+
+        try (Connection con = dbConnection.getInstancia().getConexion();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setInt(1, clienteId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    lista.add(new String[]{
+                        String.valueOf(rs.getInt("id")),
+                        String.valueOf(rs.getInt("prestamo_id")),
+                        String.valueOf(rs.getDouble("monto")),
+                        rs.getString("estado"),
+                        rs.getDate("fecha_reporte").toString()
+                    });
+                }
+            }
+        }
+
+        return lista;
+    }
 }
+
 

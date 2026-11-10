@@ -77,26 +77,28 @@ public class ClienteDao {
     
     public List<Cliente> listarClientes() throws SQLException {
         List<Cliente> listaCliente = new ArrayList<>();
-        String sql = "SELECT c.id, p.nombre, p.documento FROM clientes c INNER JOIN personas p ON c.persona_id = p.id";
+        String sql = "SELECT c.id, p.nombre, p.documento, p.correo, p.telefono FROM clientes c INNER JOIN personas p ON c.persona_id = p.id ORDER BY c.id";
         
-        Connection con = dbConnection.getInstancia().getConexion();
-        try (PreparedStatement ps = con.prepareStatement(sql);
+        try (Connection con = dbConnection.getInstancia().getConexion();
+             PreparedStatement ps = con.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 Cliente cliente = new Cliente();
                 cliente.setId(rs.getInt("id"));
                 cliente.setNombre(rs.getString("nombre"));
                 cliente.setDocumento(rs.getString("documento"));
+                cliente.setCorreo(rs.getString("correo"));
+                cliente.setTelefono(rs.getString("telefono"));
                 listaCliente.add(cliente);
             }
         }
         return listaCliente;
     }
     
-    public boolean registrarCliente(Cliente cliente, int idEmpleadoAsesor) {
+    public boolean registrarCliente(Cliente cliente) {
         String sqlUsuario = "INSERT INTO usuarios (username, password, rol) VALUES (?, ?, 'CLIENTE')";
         String sqlPersona = "INSERT INTO personas (usuario_id, documento, nombre, correo, telefono, fecha_nacimiento) VALUES (?, ?, ?, ?, ?, ?)";
-        String sqlCliente = "INSERT INTO clientes (persona_id, empleado_id) VALUES (?, ?)";
+        String sqlCliente = "INSERT INTO clientes (persona_id) VALUES (?)";
         
         Connection con = utilidades.dbConnection.getInstancia().getConexion();
         try {
@@ -135,7 +137,6 @@ public class ClienteDao {
 
             try (PreparedStatement psCliente = con.prepareStatement(sqlCliente)) {
                 psCliente.setInt(1, personaId);
-                psCliente.setInt(2, idEmpleadoAsesor);
                 psCliente.executeUpdate();
             }
 

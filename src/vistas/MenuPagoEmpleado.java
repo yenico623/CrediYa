@@ -1,9 +1,7 @@
 
+
 package vistas;
 
-import dao.PagoDao;
-import dao.PrestamoDao;
-import dao.CuotaPlanDao;
 import servicios.EmpleadoService;
 import modelos.Empleado;
 import utilidades.ConsolaUtil;
@@ -14,15 +12,9 @@ import java.util.List;
 public class MenuPagoEmpleado {
 
     private final EmpleadoService empleadoService;
-    private final PagoDao pagoDao;
-    private final PrestamoDao prestamoDao;
-    private final CuotaPlanDao cuotaPlanDao;
 
     public MenuPagoEmpleado() {
         this.empleadoService = new EmpleadoService();
-        this.pagoDao = new PagoDao();
-        this.prestamoDao = new PrestamoDao();
-        this.cuotaPlanDao = new CuotaPlanDao();
     }
 
     public void iniciar(Empleado empleadoEnSesion) {
@@ -72,7 +64,7 @@ public class MenuPagoEmpleado {
         int empId = empleadoEnSesion.getIdEmpleado();
 
         try {
-            List<String[]> prestamos = prestamoDao.listarPrestamosAsignadosEmpleado(empId);
+            List<String[]> prestamos = empleadoService.listarPrestamosActivosAsignados(empId);
 
             System.out.printf(" %-6s | %-18s | %-12s | %-10s\n",
                     "ID", "CLIENTE", "SALDO PEND.", "ESTADO");
@@ -97,7 +89,7 @@ public class MenuPagoEmpleado {
             int prestamoId = ConsolaUtil.leerEntero(
                     "    > Ingrese el ID del prestamo a abonar: ");
 
-            String[] prestamo = prestamoDao.obtenerPrestamoParaPago(prestamoId, empId);
+            String[] prestamo = empleadoService.obtenerPrestamoParaPago(prestamoId, empId);
 
             if (prestamo == null) {
                 System.out.println("  [X] El prestamo no existe, no esta activo o no esta asignado a usted.");
@@ -127,7 +119,7 @@ public class MenuPagoEmpleado {
                 System.out.println("  [!] Ingrese una cantidad entre 1 y " + cuotasPendientes + ".");
             }
 
-            double valorAPagar = cuotaPlanDao.calcularTotalCuotas(prestamoId, cantidadCuotas);
+            double valorAPagar = empleadoService.calcularTotalCuotas(prestamoId, cantidadCuotas);
 
             if (valorAPagar <= 0) {
                 System.out.println("  [X] El valor calculado no es valido.");
@@ -233,7 +225,7 @@ public class MenuPagoEmpleado {
         System.out.println("=========================================================================");
 
         try {
-            List<String[]> pagos = pagoDao.listarPagosPendientesEmpleado(
+            List<String[]> pagos = empleadoService.listarPagosPendientes(
                     empleadoEnSesion.getIdEmpleado()
             );
 
@@ -305,7 +297,7 @@ public class MenuPagoEmpleado {
         System.out.println("=========================================================================");
 
         try {
-            List<String[]> pagos = pagoDao.listarPagosProcesados();
+            List<String[]> pagos = empleadoService.listarPagosProcesados();
 
             System.out.printf(" %-6s | %-10s | %-10s | %-12s | %-15s\n",
                     "PAGO ID", "PRESTAMO", "MONTO", "ESTADO", "REVISOR");

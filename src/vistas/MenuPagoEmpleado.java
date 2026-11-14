@@ -22,7 +22,7 @@ public class MenuPagoEmpleado {
 
         while (!volver) {
             String[] opciones = {
-                "Registrar pago de prestamo asignado",
+                "Registrar pago de prestamos (EXAMEN)",
                 "Ver solicitudes de pago pendientes",
                 "Listar pagos procesados"
             };

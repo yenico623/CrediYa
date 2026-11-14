@@ -27,7 +27,7 @@ public class MenuReportes {
                 "Reporte general de empleados",
                 "Reporte general de prestamos",
                 "Reporte de clientes morosos",
-                "Reportes con Stream API"
+                "Reportes con Stream API (EXAMEN)"
             };
  
             MotorVisual.dibujarMenu("REPORTES", opciones, "Volver");

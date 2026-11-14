@@ -30,7 +30,7 @@ public class MenuAdmin {
                 "Gestion de empleados",
                 "Gestion de clientes",
                 "Solicitudes de credito",
-                "Reportes"
+                "Reportes (REQUISITO DE EXAMEN)"
             };
 
             MotorVisual.dibujarMenu("PANEL DE ADMINISTRACION", opciones, "Cerrar sesion");

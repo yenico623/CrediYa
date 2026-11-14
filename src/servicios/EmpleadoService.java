@@ -31,7 +31,8 @@ public class EmpleadoService {
     public boolean registrarPagoEmpleado(int prestamoId, int empleadoId, double montoAbono, String metodo, String referencia) {
         BigDecimal monto = BigDecimal.valueOf(montoAbono).setScale(2, RoundingMode.HALF_UP);
         String metodoBD = metodo.equalsIgnoreCase("NEQUI") ? "TRANSFERENCIA" : metodo.toUpperCase();
-
+        
+       
         if (prestamoId <= 0 || empleadoId <= 0 || monto.compareTo(BigDecimal.ZERO) <= 0) {
             return false;
         }

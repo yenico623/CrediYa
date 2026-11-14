@@ -22,7 +22,7 @@ public class MenuPrincipal {
         while (!salir) {
             String[] opcionesPrincipales = {
                 "Portal de Clientes",
-                "Acceso Operativo"
+                "Acceso Operativo(EXAMEN)"
             };
             
             MotorVisual.dibujarMenu(" [$] SISTEMA FINANCIERO CREDIYA", opcionesPrincipales, "X Salir del sistema");

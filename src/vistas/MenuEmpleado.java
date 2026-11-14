@@ -20,8 +20,8 @@ public class MenuEmpleado {
 
         while (!salir) {
             String[] opciones = {
-                "Gestion de prestamos",
-                "Gestion de solicitudes de pago"
+                "Gestion de prestamos (EXAMEN)",
+                "Gestion de solicitudes de pago (EXAMEN)"
             };
 
             MotorVisual.dibujarMenu("PORTAL DE EMPLEADO: " + empleadoEnSesion.getNombre(), opciones, "Cerrar sesion");
